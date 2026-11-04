@@ -46,3 +46,4 @@ export 'tray.dart';
 export 'utils.dart';
 export 'window.dart';
 export 'yaml.dart';
+export 'package:fl_clash/profiles/repository.dart';

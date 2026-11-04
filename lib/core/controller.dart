@@ -103,12 +103,10 @@ class CoreController {
   Future<String> setupConfig({
     required SetupParams params,
     required SetupState setupState,
-    VoidCallback? preloadInvoke,
+    FutureOr<void> Function()? preloadInvoke,
   }) async {
-    final res = _interface.setupConfig(params);
-    if (preloadInvoke != null) {
-      preloadInvoke();
-    }
+    final res = await _interface.setupConfig(params);
+    if (res.isEmpty) await preloadInvoke?.call();
     return res;
   }
 
@@ -259,12 +257,12 @@ class CoreController {
     _interface.resetTraffic();
   }
 
-  void startLog() {
-    _interface.startLog();
+  Future<void> startLog() async {
+    await _interface.startLog();
   }
 
-  void stopLog() {
-    _interface.stopLog();
+  Future<void> stopLog() async {
+    await _interface.stopLog();
   }
 
   Future<void> requestGc() async {
@@ -273,6 +271,22 @@ class CoreController {
 
   Future<void> destroy() async {
     await _interface.destroy();
+  }
+
+  Future<void> detach() => _interface.detach();
+
+  Future<Map<String, dynamic>> desktopRuntime() async {
+    return await _interface.invoke<Map<String, dynamic>>(
+          method: ActionMethod.desktopRuntime,
+        ) ??
+        {};
+  }
+
+  Future<void> requestEvents(bool enabled) async {
+    await _interface.invoke<bool>(
+      method: ActionMethod.requestEvents,
+      data: enabled,
+    );
   }
 
   Future<void> crash() async {

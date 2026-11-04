@@ -231,12 +231,33 @@ class MessageLookup extends MessageLookupByLibrary {
     "clipboardImport": MessageLookupByLibrary.simpleMessage(
       "Импорт из буфера обмена",
     ),
+    "closeGuiKeepRunning": MessageLookupByLibrary.simpleMessage(
+      "Закрыть интерфейс, оставив прокси",
+    ),
+    "closeGuiKeepRunningDesc": MessageLookupByLibrary.simpleMessage(
+      "Интерфейс и значок в трее закроются. Откройте FClash снова для управления прокси.",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("Цвет"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("Цветовые схемы"),
     "columns": MessageLookupByLibrary.simpleMessage("Столбцы"),
     "compatible": MessageLookupByLibrary.simpleMessage("Режим совместимости"),
+    "configApplied": MessageLookupByLibrary.simpleMessage(
+      "Конфигурация применена",
+    ),
+    "configApply": MessageLookupByLibrary.simpleMessage(
+      "Применить конфигурацию",
+    ),
+    "configApplying": MessageLookupByLibrary.simpleMessage(
+      "Применение конфигурации",
+    ),
     "configDataDetected": MessageLookupByLibrary.simpleMessage(
       "Данные обнаружены в конфигурации",
+    ),
+    "configFailed": MessageLookupByLibrary.simpleMessage(
+      "Ошибка применения конфигурации",
+    ),
+    "configPending": MessageLookupByLibrary.simpleMessage(
+      "Конфигурация ожидает применения",
     ),
     "confirm": MessageLookupByLibrary.simpleMessage("Подтвердить"),
     "confirmClearAllData": MessageLookupByLibrary.simpleMessage(
@@ -351,6 +372,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "domain": MessageLookupByLibrary.simpleMessage("Домен"),
     "download": MessageLookupByLibrary.simpleMessage("Скачивание"),
+    "dragToReorder": MessageLookupByLibrary.simpleMessage(
+      "Перетащите для изменения порядка",
+    ),
     "edit": MessageLookupByLibrary.simpleMessage("Редактировать"),
     "editGlobalRules": MessageLookupByLibrary.simpleMessage(
       "Редактировать глобальные правила",

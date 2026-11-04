@@ -143,13 +143,14 @@ class _StandardContentState extends ConsumerState<StandardContent> {
                   final rule = addedRules[index];
                   final position = ItemPosition.get(index, addedRules.length);
                   return ReorderableDelayedDragStartListener(
-                    key: ObjectKey(rule),
+                    key: ValueKey(rule.id),
                     index: index,
                     child: ItemPositionProvider(
                       position: position,
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         child: RuleItem(
+                          reorderIndex: index,
                           hasMatch: true,
                           isEditing: selectedRules.isNotEmpty,
                           isSelected: selectedRules.contains(rule.id),

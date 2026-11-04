@@ -53,14 +53,14 @@ class CoreLib extends CoreHandlerInterface {
 
   @override
   Future<bool> startListener() async {
-    await super.startListener();
+    if (!await super.startListener()) return false;
     await service?.start();
     return true;
   }
 
   @override
   Future<bool> stopListener() async {
-    await super.stopListener();
+    if (!await super.stopListener()) return false;
     await service?.stop();
     return true;
   }
@@ -74,9 +74,9 @@ class CoreLib extends CoreHandlerInterface {
     final id = '${method.name}#${utils.id}';
     final result = await service
         ?.invokeAction(Action(id: id, method: method, data: data))
-        .withTimeout(onTimeout: () => null);
+        .withTimeout(timeout: timeout);
     if (result == null) {
-      return null;
+      throw StateError('Core returned no result for ${method.name}');
     }
     return parasResult<T>(result);
   }

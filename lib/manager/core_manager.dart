@@ -11,6 +11,9 @@ import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_clash/common/visibility.dart';
+import 'package:fl_clash/config/application.dart';
+import 'package:fl_clash/core/operation_queue.dart';
 
 class CoreManager extends ConsumerStatefulWidget {
   final Widget child;
@@ -23,6 +26,7 @@ class CoreManager extends ConsumerStatefulWidget {
 
 class _CoreContainerState extends ConsumerState<CoreManager>
     with CoreEventListener {
+  final _subscriptionQueue = OperationQueue();
   @override
   Widget build(BuildContext context) {
     return widget.child;
@@ -32,6 +36,20 @@ class _CoreContainerState extends ConsumerState<CoreManager>
   void initState() {
     super.initState();
     coreEventManager.addListener(this);
+    ref.listenManual(
+      patchClashConfigProvider,
+      (_, _) => configApplication.markPending(),
+    );
+    ref.listenManual(
+      overrideDnsProvider,
+      (_, _) => configApplication.markPending(),
+    );
+    appVisibility.addListener(_updateSubscriptions);
+    ref.listenManual(
+      currentPageLabelProvider,
+      (_, _) => _updateSubscriptions(),
+    );
+    ref.listenManual(coreStatusProvider, (_, _) => _updateSubscriptions());
     ref.listenManual(currentProfileIdProvider, (prev, next) {
       if (prev != next) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -48,18 +66,40 @@ class _CoreContainerState extends ConsumerState<CoreManager>
       prev,
       next,
     ) {
-      if (next) {
-        coreController.startLog();
-      } else {
-        coreController.stopLog();
-      }
+      _updateSubscriptions();
     }, fireImmediately: true);
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() {
+    appVisibility.removeListener(_updateSubscriptions);
     coreEventManager.removeListener(this);
     super.dispose();
+  }
+
+  void _updateSubscriptions() {
+    if (ref.read(coreStatusProvider) != CoreStatus.connected) return;
+    final visible = appVisibility.value;
+    final logEnabled = visible && ref.read(appSettingProvider).openLogs;
+    final requestsEnabled =
+        visible && ref.read(currentPageLabelProvider) == PageLabel.requests;
+    unawaited(
+      _subscriptionQueue.run(() async {
+        if (!mounted || ref.read(coreStatusProvider) != CoreStatus.connected) {
+          return;
+        }
+        try {
+          if (logEnabled) {
+            await coreController.startLog();
+          } else {
+            await coreController.stopLog();
+          }
+          await coreController.requestEvents(requestsEnabled);
+        } catch (error) {
+          commonPrint.log('Update event subscriptions failed: $error');
+        }
+      }),
+    );
   }
 
   @override

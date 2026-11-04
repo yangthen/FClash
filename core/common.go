@@ -3,6 +3,7 @@ package main
 import (
 	b "bytes"
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
+	"sync/atomic"
 
 	"github.com/metacubex/mihomo/adapter"
 	"github.com/metacubex/mihomo/adapter/inbound"
@@ -33,12 +35,15 @@ import (
 )
 
 var (
-	currentConfig *config.Config
-	version       = 0
-	isRunning     = false
-	runLock       sync.Mutex
-	mBatch, _     = batch.New[bool](context.Background(), batch.WithConcurrencyNum[bool](50))
-	debugError    = false
+	currentConfig        *config.Config
+	version              = 0
+	isRunning            = false
+	runLock              sync.Mutex
+	mBatch, _            = batch.New[bool](context.Background(), batch.WithConcurrencyNum[bool](50))
+	debugError           = false
+	startedAt            int64
+	activeConfigDigest   string
+	requestEventsEnabled atomic.Bool
 )
 
 func getExternalProvidersRaw() map[string]cp.Provider {
@@ -184,6 +189,7 @@ func readFile(path string) ([]byte, error) {
 func updateConfig(params *UpdateParams) {
 	runLock.Lock()
 	defer runLock.Unlock()
+	activeConfigDigest = ""
 	general := currentConfig.General
 	if params.MixedPort != nil {
 		general.MixedPort = *params.MixedPort
@@ -253,12 +259,17 @@ func applyConfig(params *SetupParams) error {
 	runtime.GC()
 	runLock.Lock()
 	defer runLock.Unlock()
-	var err error
-	constant.DefaultTestURL = params.TestURL
-	currentConfig, err = executor.ParseWithPath(filepath.Join(constant.Path.HomeDir(), "config.yaml"))
+	nextConfig, err := executor.ParseWithPath(filepath.Join(constant.Path.HomeDir(), "config.yaml"))
 	if err != nil {
-		currentConfig, _ = config.ParseRawConfig(config.DefaultRawConfig())
+		return err
 	}
+	currentConfig = nextConfig
+	if content, readErr := os.ReadFile(filepath.Join(constant.Path.HomeDir(), "config.yaml")); readErr == nil {
+		activeConfigDigest = fmt.Sprintf("%x", md5.Sum(content))
+	} else {
+		activeConfigDigest = ""
+	}
+	constant.DefaultTestURL = params.TestURL
 	hub.ApplyConfig(currentConfig)
 	patchSelectGroup(params.SelectedMap)
 	updateListeners()

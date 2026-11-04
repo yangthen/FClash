@@ -8,6 +8,7 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/core.dart';
 
 import 'interface.dart';
+import 'pending_requests.dart';
 import 'transport.dart';
 
 class CoreService extends CoreHandlerInterface {
@@ -17,7 +18,10 @@ class CoreService extends CoreHandlerInterface {
 
   Completer<bool> _shutdownCompleter = Completer();
 
-  final Map<String, Completer> _callbackCompleterMap = {};
+  final PendingRequests _requests = PendingRequests();
+  late final Future<void> _ready;
+  Future<void>? _starting;
+  bool reattached = false;
 
   Process? _process;
 
@@ -27,28 +31,36 @@ class CoreService extends CoreHandlerInterface {
   }
 
   CoreService._internal() {
+    _ready = _initialize();
+  }
+
+  Future<void> _initialize() async {
+    final identity = (await appPath.homeDirPath).toMd5();
     _transport = IPCCoreTransport(
-      address: system.isWindows ? windowsPipeName : unixSocketPath,
+      address: system.isWindows
+          ? '\\\\.\\pipe\\FClashCore_$identity'
+          : '/tmp/FClashCore_$identity.sock',
     );
-    _initServer();
+    await _initServer();
   }
 
   Future<void> handleResult(ActionResult result) async {
-    final completer = _callbackCompleterMap[result.id];
-    final data = await parasResult(result);
     if (result.id?.isEmpty == true) {
       coreEventManager.sendEvent(CoreEvent.fromJson(result.data));
-    }
-    if (completer?.isCompleted == true) {
       return;
     }
-    completer?.complete(data);
+    try {
+      _requests.complete(result.id, await parasResult(result));
+    } catch (error, stack) {
+      _requests.fail(result.id, error, stack);
+    }
   }
 
   Future<void> _initServer() async {
     await _transport.init();
 
     _transport.onDisconnect = () {
+      _requests.disconnect();
       _handleInvokeCrashEvent();
       if (!_shutdownCompleter.isCompleted) {
         _shutdownCompleter.complete(true);
@@ -62,7 +74,7 @@ class CoreService extends CoreHandlerInterface {
           (data) async {
             try {
               final dataJson = await data.trim().commonToJSON<dynamic>();
-              handleResult(ActionResult.fromJson(dataJson));
+              await handleResult(ActionResult.fromJson(dataJson));
             } catch (e) {
               commonPrint.log(
                 'Failed to parse transport data: $e',
@@ -86,34 +98,54 @@ class CoreService extends CoreHandlerInterface {
   }
 
   Future<void> start() async {
+    if (_starting != null) return _starting;
+    final starting = _start();
+    _starting = starting;
+    try {
+      await starting;
+    } finally {
+      _starting = null;
+    }
+  }
+
+  Future<void> _start() async {
+    await _ready.timeout(const Duration(seconds: 10));
+    try {
+      await _transport.connectionCompleter.future.timeout(
+        const Duration(seconds: 2),
+      );
+      reattached = true;
+      return;
+    } on TimeoutException {
+      reattached = false;
+    }
     if (_process != null) {
       await shutdown(false);
     }
     if (system.isWindows && await system.checkIsAdmin()) {
       final isSuccess = await request.startCoreByHelper(_transport.address);
       if (isSuccess) {
-        await _transport.connectionCompleter.future;
+        await _transport.connectionCompleter.future.timeout(
+          const Duration(seconds: 10),
+        );
         return;
       }
     }
     try {
-      _process = await Process.start(appPath.corePath, [_transport.address]);
+      _process = await Process.start(appPath.corePath, [
+        _transport.address,
+      ], mode: ProcessStartMode.detached);
     } catch (e) {
       commonPrint.log(
         'Failed to start core process: $e',
         logLevel: LogLevel.error,
       );
       _handleInvokeCrashEvent();
-      return;
+      rethrow;
     }
-    _process?.stdout.listen((_) {});
-    _process?.stderr.listen((e) {
-      final error = utf8.decode(e);
-      if (error.isNotEmpty) {
-        commonPrint.log(error, logLevel: LogLevel.warning);
-      }
-    });
-    await _transport.connectionCompleter.future;
+    await _transport.connectionCompleter.future.timeout(
+      const Duration(seconds: 10),
+    );
   }
 
   @override
@@ -121,6 +153,14 @@ class CoreService extends CoreHandlerInterface {
     await shutdown(false);
     await _transport.close();
     return true;
+  }
+
+  @override
+  Future<void> detach() async {
+    await invoke<bool>(method: ActionMethod.stopLog);
+    await invoke<bool>(method: ActionMethod.requestEvents, data: false);
+    _requests.disconnect();
+    await _transport.close();
   }
 
   Future<void> sendMessage(String message) async {
@@ -131,23 +171,30 @@ class CoreService extends CoreHandlerInterface {
   @override
   Future<bool> shutdown(bool isUser) async {
     _shutdownCompleter = Completer();
+    if (_transport.connectionCompleter.isCompleted) {
+      try {
+        await invoke<bool>(
+          method: ActionMethod.terminateCore,
+          timeout: const Duration(seconds: 3),
+        );
+      } catch (error) {
+        commonPrint.log('Core shutdown: $error');
+      }
+    }
     if (system.isWindows) {
       await request.stopCoreByHelper();
     }
     _transport.disconnected();
     _process?.kill();
     _process = null;
-    _clearCompleter();
+    _requests.disconnect();
     if (isUser) {
-      return _shutdownCompleter.future;
+      return _shutdownCompleter.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => false,
+      );
     } else {
       return true;
-    }
-  }
-
-  void _clearCompleter() {
-    for (final completer in _callbackCompleterMap.values) {
-      completer.safeCompleter(null);
     }
   }
 
@@ -164,17 +211,11 @@ class CoreService extends CoreHandlerInterface {
     Duration? timeout,
   }) async {
     final id = '${method.name}#${utils.id}';
-    _callbackCompleterMap[id] = Completer<T?>();
-    sendMessage(json.encode(Action(id: id, method: method, data: data)));
-    return (_callbackCompleterMap[id] as Completer<T?>).future.withTimeout(
-      timeout: timeout,
-      onLast: () {
-        final completer = _callbackCompleterMap[id];
-        completer?.safeCompleter(null);
-        _callbackCompleterMap.remove(id);
-      },
-      tag: id,
-      onTimeout: () => null,
+    return _requests.run<T?>(
+      id,
+      () =>
+          sendMessage(json.encode(Action(id: id, method: method, data: data))),
+      timeout: timeout ?? const Duration(seconds: 30),
     );
   }
 

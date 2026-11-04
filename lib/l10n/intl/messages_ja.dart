@@ -170,13 +170,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "clearData": MessageLookupByLibrary.simpleMessage("データを消去"),
     "clipboardExport": MessageLookupByLibrary.simpleMessage("クリップボードにエクスポート"),
     "clipboardImport": MessageLookupByLibrary.simpleMessage("クリップボードからインポート"),
+    "closeGuiKeepRunning": MessageLookupByLibrary.simpleMessage(
+      "画面を閉じてプロキシを継続",
+    ),
+    "closeGuiKeepRunningDesc": MessageLookupByLibrary.simpleMessage(
+      "画面とトレイを終了します。管理するには FClash を再度開いてください。",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("カラー"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("カラースキーム"),
     "columns": MessageLookupByLibrary.simpleMessage("列"),
     "compatible": MessageLookupByLibrary.simpleMessage("互換モード"),
+    "configApplied": MessageLookupByLibrary.simpleMessage("設定を適用済み"),
+    "configApply": MessageLookupByLibrary.simpleMessage("設定を適用"),
+    "configApplying": MessageLookupByLibrary.simpleMessage("設定を適用中"),
     "configDataDetected": MessageLookupByLibrary.simpleMessage(
       "設定内にデータが検出されました",
     ),
+    "configFailed": MessageLookupByLibrary.simpleMessage("設定の適用に失敗"),
+    "configPending": MessageLookupByLibrary.simpleMessage("設定の適用待ち"),
     "confirm": MessageLookupByLibrary.simpleMessage("確認"),
     "confirmClearAllData": MessageLookupByLibrary.simpleMessage(
       "すべてのデータをクリアしてもよろしいですか？",
@@ -268,6 +279,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "doYouWantToPass": MessageLookupByLibrary.simpleMessage("通過させますか？"),
     "domain": MessageLookupByLibrary.simpleMessage("ドメイン"),
     "download": MessageLookupByLibrary.simpleMessage("ダウンロード"),
+    "dragToReorder": MessageLookupByLibrary.simpleMessage("ドラッグして並べ替え"),
     "edit": MessageLookupByLibrary.simpleMessage("編集"),
     "editGlobalRules": MessageLookupByLibrary.simpleMessage("グローバルルールを編集"),
     "editProxy": MessageLookupByLibrary.simpleMessage("プロキシを編集"),

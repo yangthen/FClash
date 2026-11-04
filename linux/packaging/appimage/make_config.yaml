@@ -1,14 +1,14 @@
-display_name: FlClash
+display_name: FClash
 
 icon: ./assets/images/icon.png
 
 keywords:
-  - FlClash
+  - FClash
   - Clash
   - ClashMeta
   - Proxy
 
-generic_name: FlClash
+generic_name: FClash
 
 categories:
   - Network

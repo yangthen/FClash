@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/database/database.dart';
+import 'package:fl_clash/core/operation_queue.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -14,12 +15,38 @@ Future<void> withRollback<T>({
   required T snapshot,
   required FutureOr<void> Function() action,
   required void Function(T snapshot) rollback,
+  bool Function()? canRollback,
 }) async {
   try {
     await action();
   } catch (e, s) {
-    rollback(snapshot);
+    if (canRollback?.call() ?? true) rollback(snapshot);
     Error.throwWithStackTrace(e, s);
+  }
+}
+
+final _databaseWrites = OperationQueue();
+Future<void> flushDatabaseWrites() => _databaseWrites.settled;
+
+mixin OptimisticPersistence {
+  int _writeRevision = 0;
+
+  Future<void> persist<T>({
+    required T snapshot,
+    required FutureOr<void> Function() action,
+    required void Function(T snapshot) rollback,
+  }) async {
+    final revision = ++_writeRevision;
+    try {
+      await withRollback(
+        snapshot: snapshot,
+        action: () => _databaseWrites.run(() => Future<void>.sync(action)),
+        rollback: rollback,
+        canRollback: () => revision == _writeRevision,
+      );
+    } catch (error, stack) {
+      commonPrint.log('Database write failed: $error\n$stack');
+    }
   }
 }
 
@@ -44,7 +71,7 @@ Stream<int> proxyGroupsCount(Ref ref, int profileId) {
 }
 
 @Riverpod(keepAlive: true)
-class Profiles extends _$Profiles {
+class Profiles extends _$Profiles with OptimisticPersistence {
   @override
   List<Profile> build() {
     return ref.watch(profilesStreamProvider).value ?? [];
@@ -55,7 +82,7 @@ class Profiles extends _$Profiles {
     final newProfile = previous.optimizeLabel(profile);
     state = previous.copyAndPut(newProfile, (item) => item.id == newProfile.id);
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.profiles.put(newProfile.toCompanion()),
         rollback: (v) => state = v,
@@ -67,7 +94,7 @@ class Profiles extends _$Profiles {
     final previous = List<Profile>.from(state);
     state = previous.where((e) => e.id != id).toList();
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.profiles.remove((t) => t.id.equals(id)),
         rollback: (v) => state = v,
@@ -84,7 +111,7 @@ class Profiles extends _$Profiles {
     next[index] = newProfile;
     state = next;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.profiles.put(newProfile.toCompanion()),
         rollback: (v) => state = v,
@@ -96,7 +123,7 @@ class Profiles extends _$Profiles {
     final previous = List<Profile>.from(state);
     state = List<Profile>.from(profiles);
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.profilesDao.setAll(profiles),
         rollback: (v) => state = v,
@@ -115,7 +142,7 @@ class Profiles extends _$Profiles {
     });
     state = next;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.profilesDao.putAll(needUpdate),
         rollback: (v) => state = v,
@@ -130,7 +157,7 @@ class Profiles extends _$Profiles {
 }
 
 @riverpod
-class Scripts extends _$Scripts with AsyncNotifierMixin {
+class Scripts extends _$Scripts with AsyncNotifierMixin, OptimisticPersistence {
   @override
   Stream<List<Script>> build() {
     return database.scriptsDao.query().watch();
@@ -150,7 +177,7 @@ class Scripts extends _$Scripts with AsyncNotifierMixin {
     }
     value = next;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.scripts.put(script.toCompanion()),
         rollback: (v) => value = v,
@@ -166,7 +193,7 @@ class Scripts extends _$Scripts with AsyncNotifierMixin {
     next.removeAt(index);
     value = next;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.scripts.remove((t) => t.id.equals(id)),
         rollback: (v) => value = v,
@@ -199,10 +226,13 @@ Future<Script?> script(Ref ref, int? scriptId) async {
 }
 
 @riverpod
-class GlobalRules extends _$GlobalRules with AsyncNotifierMixin {
+class GlobalRules extends _$GlobalRules
+    with AsyncNotifierMixin, OptimisticPersistence {
+  Database get store => database;
+
   @override
   Stream<List<Rule>> build() {
-    return database.rulesDao.queryGlobalAddedRules().watch();
+    return store.rulesDao.queryGlobalAddedRules().watch();
   }
 
   @override
@@ -220,9 +250,9 @@ class GlobalRules extends _$GlobalRules with AsyncNotifierMixin {
     final previous = List<Rule>.from(value);
     value = List.from(previous.where((item) => !ruleIds.contains(item.id)));
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
-        action: () => database.rulesDao.delRules(ruleIds),
+        action: () => store.rulesDao.delRules(ruleIds),
         rollback: (v) => value = v,
       ),
     );
@@ -233,9 +263,9 @@ class GlobalRules extends _$GlobalRules with AsyncNotifierMixin {
     final newRule = rule.autoOrder(rule, null, previous.firstOrNull?.order);
     value = previous.copyAndPut(newRule, (rule) => rule.id == newRule.id);
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
-        action: () => database.rulesDao.putGlobalRule(newRule),
+        action: () => store.rulesDao.putGlobalRule(newRule),
         rollback: (v) => value = v,
       ),
     );
@@ -245,15 +275,16 @@ class GlobalRules extends _$GlobalRules with AsyncNotifierMixin {
     final previous = List<Rule>.from(value);
     final item = previous[oldIndex];
     final nextItems = previous.copyAndReorder(oldIndex, newIndex);
-    value = nextItems;
     final preOrder = nextItems.safeGet(newIndex - 1)?.order;
     final nextOrder = nextItems.safeGet(newIndex + 1)?.order;
     final newOrder = indexing.generateKeyBetween(preOrder, nextOrder)!;
+    nextItems[newIndex] = item.copyWith(order: newOrder);
+    value = nextItems;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () =>
-            database.rulesDao.orderGlobalRule(ruleId: item.id, order: newOrder),
+            store.rulesDao.orderGlobalRule(ruleId: item.id, order: newOrder),
         rollback: (v) => value = v,
       ),
     );
@@ -261,7 +292,8 @@ class GlobalRules extends _$GlobalRules with AsyncNotifierMixin {
 }
 
 @riverpod
-class ProfileAddedRules extends _$ProfileAddedRules with AsyncNotifierMixin {
+class ProfileAddedRules extends _$ProfileAddedRules
+    with AsyncNotifierMixin, OptimisticPersistence {
   @override
   Stream<List<Rule>> build(int profileId) {
     return database.rulesDao.queryProfileAddedRules(profileId).watch();
@@ -283,7 +315,7 @@ class ProfileAddedRules extends _$ProfileAddedRules with AsyncNotifierMixin {
     final newRule = rule.autoOrder(rule, null, previous.firstOrNull?.order);
     value = previous.copyAndPut(newRule, (rule) => rule.id == newRule.id);
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.rulesDao.putProfileAddedRule(profileId, newRule),
         rollback: (v) => value = v,
@@ -295,7 +327,7 @@ class ProfileAddedRules extends _$ProfileAddedRules with AsyncNotifierMixin {
     final previous = List<Rule>.from(value);
     value = List.from(previous.where((item) => !ruleIds.contains(item.id)));
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.rulesDao.delRules(ruleIds),
         rollback: (v) => value = v,
@@ -307,12 +339,13 @@ class ProfileAddedRules extends _$ProfileAddedRules with AsyncNotifierMixin {
     final previous = List<Rule>.from(value);
     final item = previous[oldIndex];
     final nextItems = previous.copyAndReorder(oldIndex, newIndex);
-    value = nextItems;
     final preOrder = nextItems.safeGet(newIndex - 1)?.order;
     final nextOrder = nextItems.safeGet(newIndex + 1)?.order;
     final newOrder = indexing.generateKeyBetween(preOrder, nextOrder)!;
+    nextItems[newIndex] = item.copyWith(order: newOrder);
+    value = nextItems;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.rulesDao.orderProfileAddedRule(
           profileId,
@@ -326,7 +359,8 @@ class ProfileAddedRules extends _$ProfileAddedRules with AsyncNotifierMixin {
 }
 
 @riverpod
-class ProfileCustomRules extends _$ProfileCustomRules with AsyncNotifierMixin {
+class ProfileCustomRules extends _$ProfileCustomRules
+    with AsyncNotifierMixin, OptimisticPersistence {
   @override
   Stream<List<Rule>> build(int profileId) {
     return database.rulesDao.queryProfileCustomRules(profileId).watch();
@@ -348,7 +382,7 @@ class ProfileCustomRules extends _$ProfileCustomRules with AsyncNotifierMixin {
     final newRule = rule.autoOrder(rule, null, previous.firstOrNull?.order);
     value = previous.copyAndPut(newRule, (rule) => rule.id == newRule.id);
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () =>
             database.rulesDao.putProfileCustomRule(profileId, newRule),
@@ -361,7 +395,7 @@ class ProfileCustomRules extends _$ProfileCustomRules with AsyncNotifierMixin {
     final previous = List<Rule>.from(value);
     value = List.from(previous.where((item) => !ruleIds.contains(item.id)));
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.rulesDao.delRules(ruleIds),
         rollback: (v) => value = v,
@@ -373,12 +407,13 @@ class ProfileCustomRules extends _$ProfileCustomRules with AsyncNotifierMixin {
     final previous = List<Rule>.from(value);
     final item = previous[oldIndex];
     final nextItems = previous.copyAndReorder(oldIndex, newIndex);
-    value = nextItems;
     final preOrder = nextItems.safeGet(newIndex - 1)?.order;
     final nextOrder = nextItems.safeGet(newIndex + 1)?.order;
     final newOrder = indexing.generateKeyBetween(preOrder, nextOrder)!;
+    nextItems[newIndex] = item.copyWith(order: newOrder);
+    value = nextItems;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.rulesDao.orderProfileCustomRule(
           profileId,
@@ -392,7 +427,8 @@ class ProfileCustomRules extends _$ProfileCustomRules with AsyncNotifierMixin {
 }
 
 @riverpod
-class ProxyGroups extends _$ProxyGroups with AsyncNotifierMixin {
+class ProxyGroups extends _$ProxyGroups
+    with AsyncNotifierMixin, OptimisticPersistence {
   @override
   Stream<List<ProxyGroup>> build(int profileId) {
     return database.proxyGroupsDao.query(profileId).watch();
@@ -410,7 +446,7 @@ class ProxyGroups extends _$ProxyGroups with AsyncNotifierMixin {
     final previous = List<ProxyGroup>.from(value);
     value = List.from(previous.where((item) => item.name != name));
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.proxyGroups.remove(
           (t) => t.profileId.equals(profileId) & t.name.equals(name),
@@ -459,7 +495,7 @@ class ProxyGroups extends _$ProxyGroups with AsyncNotifierMixin {
     }
     value = next;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () =>
             database.proxyGroups.put(proxyGroup.toCompanion(profileId)),
@@ -473,12 +509,13 @@ class ProxyGroups extends _$ProxyGroups with AsyncNotifierMixin {
     final previous = List<ProxyGroup>.from(value);
     final item = previous[oldIndex];
     final nextItems = previous.copyAndReorder(oldIndex, newIndex);
-    value = nextItems;
     final preOrder = nextItems.safeGet(newIndex - 1)?.order;
     final nextOrder = nextItems.safeGet(newIndex + 1)?.order;
     final newOrder = indexing.generateKeyBetween(preOrder, nextOrder)!;
+    nextItems[newIndex] = item.copyWith(order: newOrder);
+    value = nextItems;
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.proxyGroupsDao.order(
           profileId,
@@ -496,7 +533,7 @@ class ProxyGroups extends _$ProxyGroups with AsyncNotifierMixin {
 
 @riverpod
 class ProfileDisabledRuleIds extends _$ProfileDisabledRuleIds
-    with AsyncNotifierMixin {
+    with AsyncNotifierMixin, OptimisticPersistence {
   @override
   List<int> get value => state.value ?? [];
 
@@ -531,7 +568,7 @@ class ProfileDisabledRuleIds extends _$ProfileDisabledRuleIds
     final previous = List<int>.from(value);
     value = List.from(previous.where((item) => item != ruleId));
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.rulesDao.delDisabledLink(profileId, ruleId),
         rollback: (v) => value = v,
@@ -543,7 +580,7 @@ class ProfileDisabledRuleIds extends _$ProfileDisabledRuleIds
     final previous = List<int>.from(value);
     _put(ruleId);
     unawaited(
-      withRollback(
+      persist(
         snapshot: previous,
         action: () => database.rulesDao.putDisabledLink(profileId, ruleId),
         rollback: (v) => value = v,

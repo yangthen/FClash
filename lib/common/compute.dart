@@ -16,23 +16,18 @@ List<Group> computeSort({
     required Map<String, String> selectedMap,
     required String testUrl,
   }) {
-    return List.from(proxies)..sort((a, b) {
-      final aDelayState = computeProxyDelayState(
-        proxyName: a.name,
-        testUrl: testUrl,
-        groups: groups,
-        selectedMap: selectedMap,
-        delayMap: delayMap,
-      );
-      final bDelayState = computeProxyDelayState(
-        proxyName: b.name,
-        testUrl: testUrl,
-        groups: groups,
-        selectedMap: selectedMap,
-        delayMap: delayMap,
-      );
-      return aDelayState.compareTo(bDelayState);
-    });
+    final sortKeys = {
+      for (final proxy in proxies)
+        proxy.name: computeProxyDelayState(
+          proxyName: proxy.name,
+          testUrl: testUrl,
+          groups: groups,
+          selectedMap: selectedMap,
+          delayMap: delayMap,
+        ),
+    };
+    return List<Proxy>.from(proxies)
+      ..sort((a, b) => sortKeys[a.name]!.compareTo(sortKeys[b.name]!));
   }
 
   List<Proxy> sortOfName(List<Proxy> proxies) {
@@ -61,22 +56,20 @@ SelectedProxyState getRealSelectedProxyState(
   required List<Group> groups,
   required Map<String, String> selectedMap,
 }) {
-  if (state.proxyName.isEmpty) return state;
-  final index = groups.indexWhere((element) => element.name == state.proxyName);
-  final newState = state.copyWith(group: true);
-  if (index == -1) return newState;
-  final group = groups[index];
-  final currentSelectedName = group.getCurrentSelectedName(
-    selectedMap[newState.proxyName] ?? '',
-  );
-  if (currentSelectedName.isEmpty) {
-    return newState;
+  final byName = {for (final group in groups) group.name: group};
+  final visited = <String>{};
+  var current = state;
+  while (current.proxyName.isNotEmpty && visited.add(current.proxyName)) {
+    final group = byName[current.proxyName];
+    current = current.copyWith(group: true);
+    if (group == null) return current;
+    final selected = group.getCurrentSelectedName(
+      selectedMap[group.name] ?? '',
+    );
+    if (selected.isEmpty) return current;
+    current = current.copyWith(proxyName: selected, testUrl: group.testUrl);
   }
-  return getRealSelectedProxyState(
-    newState.copyWith(proxyName: currentSelectedName, testUrl: group.testUrl),
-    groups: groups,
-    selectedMap: selectedMap,
-  );
+  return current;
 }
 
 SelectedProxyState computeRealSelectedProxyState(

@@ -218,6 +218,14 @@ Map<String, dynamic> _$FallbackFilterToJson(_FallbackFilter instance) =>
       'domain': instance.domain,
     };
 
+_DnsPolicy _$DnsPolicyFromJson(Map<String, dynamic> json) => _DnsPolicy(
+  domain: json['domain'] as String,
+  server: json['server'] as String,
+);
+
+Map<String, dynamic> _$DnsPolicyToJson(_DnsPolicy instance) =>
+    <String, dynamic>{'domain': instance.domain, 'server': instance.server};
+
 _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
   enable: json['enable'] as bool? ?? true,
   listen: json['listen'] as String? ?? '0.0.0.0:1053',
@@ -240,15 +248,13 @@ _Dns _$DnsFromJson(Map<String, dynamic> json) => _Dns(
           ?.map((e) => e as String)
           .toList() ??
       const ['*.lan', 'localhost.ptlogin2.qq.com'],
-  nameserverPolicy:
-      (json['nameserver-policy'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(k, e as String),
-      ) ??
-      const {
-        'www.baidu.com': '114.114.114.114',
-        '+.internal.crop.com': '10.0.0.1',
-        'geosite:cn': 'https://doh.pub/dns-query',
-      },
+  nameserverPolicy: json['nameserver-policy'] == null
+      ? const [
+          DnsPolicy(domain: 'www.baidu.com', server: '114.114.114.114'),
+          DnsPolicy(domain: '+.internal.crop.com', server: '10.0.0.1'),
+          DnsPolicy(domain: 'geosite:cn', server: 'https://doh.pub/dns-query'),
+        ]
+      : dnsPoliciesFromJson(json['nameserver-policy'] as Map<String, dynamic>),
   nameserver:
       (json['nameserver'] as List<dynamic>?)
           ?.map((e) => e as String)
@@ -281,7 +287,7 @@ Map<String, dynamic> _$DnsToJson(_Dns instance) => <String, dynamic>{
   'enhanced-mode': _$DnsModeEnumMap[instance.enhancedMode]!,
   'fake-ip-range': instance.fakeIpRange,
   'fake-ip-filter': instance.fakeIpFilter,
-  'nameserver-policy': instance.nameserverPolicy,
+  'nameserver-policy': dnsPoliciesToJson(instance.nameserverPolicy),
   'nameserver': instance.nameserver,
   'fallback': instance.fallback,
   'proxy-server-nameserver': instance.proxyServerNameserver,

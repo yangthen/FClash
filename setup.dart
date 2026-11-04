@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
+import 'scripts/release_version.dart';
 
 const _allTargets = <String, String>{
   'android': 'apk',
@@ -200,6 +201,26 @@ Future<int> _package(
     stderr.write(utf8.decode(data));
   });
   final exitCode = await process.exitCode;
+  if (exitCode == 0) {
+    final pubspec = await File(p.join(rootDir, 'pubspec.yaml')).readAsString();
+    final match = RegExp(
+      r'^version:\s*([^+\s]+)',
+      multiLine: true,
+    ).firstMatch(pubspec)!;
+    final version = ReleaseVersion.parse(match[1]!);
+    final dist = Directory(p.join(rootDir, 'dist'));
+    if (version.label != version.semver && await dist.exists()) {
+      await for (final entity in dist.list()) {
+        if (entity is! File) continue;
+        final name = p.basename(entity.path);
+        final renamed = name.replaceFirst(
+          'FClash-${version.semver}-',
+          'FClash-${version.label}-',
+        );
+        if (renamed != name) await entity.rename(p.join(dist.path, renamed));
+      }
+    }
+  }
   return exitCode;
 }
 

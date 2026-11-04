@@ -743,6 +743,7 @@ class DecorationListItem extends StatelessWidget {
 }
 
 class SelectedDecorationListItem extends StatelessWidget {
+  final Widget? trailing;
   final bool isSelected;
   final bool isEditing;
   final Widget title;
@@ -756,6 +757,7 @@ class SelectedDecorationListItem extends StatelessWidget {
 
   const SelectedDecorationListItem({
     super.key,
+    this.trailing,
     required this.isSelected,
     required this.onSelected,
     this.horizontalTitleGap,
@@ -786,12 +788,18 @@ class SelectedDecorationListItem extends StatelessWidget {
         onPressed();
       },
       subtitle: subtitle,
-      trailing: CommonCheckBox(
-        value: isSelected,
-        isCircle: true,
-        onChanged: (_) {
-          onSelected();
-        },
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CommonCheckBox(
+            value: isSelected,
+            isCircle: true,
+            onChanged: (_) {
+              onSelected();
+            },
+          ),
+          if (!isEditing && trailing != null) trailing!,
+        ],
       ),
     );
   }

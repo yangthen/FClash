@@ -22,6 +22,20 @@ void main() {
       expect(rolledBack, previous);
     });
 
+    test('failed older mutation cannot overwrite newer state', () async {
+      var state = 'new edit';
+      await expectLater(
+        withRollback(
+          snapshot: 'old edit',
+          action: () async => throw StateError('old write failed'),
+          rollback: (value) => state = value,
+          canRollback: () => false,
+        ),
+        throwsStateError,
+      );
+      expect(state, 'new edit');
+    });
+
     test('does not roll back when action succeeds', () async {
       var rollbackCalled = false;
 

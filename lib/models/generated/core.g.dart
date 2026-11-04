@@ -263,6 +263,9 @@ Map<String, dynamic> _$ActionToJson(_Action instance) => <String, dynamic>{
 };
 
 const _$ActionMethodEnumMap = {
+  ActionMethod.desktopRuntime: 'desktopRuntime',
+  ActionMethod.terminateCore: 'terminateCore',
+  ActionMethod.requestEvents: 'requestEvents',
   ActionMethod.message: 'message',
   ActionMethod.initClash: 'initClash',
   ActionMethod.getIsInit: 'getIsInit',

@@ -550,5 +550,13 @@
   "geoSkipped": "{name} пропущено",
   "geoUpdated": "{name} обновлено",
   "secondsCount": "{count} секунд",
-  "entriesCount": "{count} записей"
+  "entriesCount": "{count} записей",
+  "dragToReorder": "Перетащите для изменения порядка",
+  "configPending": "Конфигурация ожидает применения",
+  "configApplying": "Применение конфигурации",
+  "configApplied": "Конфигурация применена",
+  "configFailed": "Ошибка применения конфигурации",
+  "configApply": "Применить конфигурацию",
+  "closeGuiKeepRunning": "Закрыть интерфейс, оставив прокси",
+  "closeGuiKeepRunningDesc": "Интерфейс и значок в трее закроются. Откройте FClash снова для управления прокси."
 }

@@ -53,6 +53,9 @@ func handleStartListener() bool {
 	runLock.Lock()
 	defer runLock.Unlock()
 	isRunning = true
+	if startedAt == 0 {
+		startedAt = time.Now().UnixMilli()
+	}
 	updateListeners()
 	resolver.ResetConnection()
 	return true
@@ -62,6 +65,7 @@ func handleStopListener() bool {
 	runLock.Lock()
 	defer runLock.Unlock()
 	isRunning = false
+	startedAt = 0
 	listener.StopListener()
 	resolver.ResetConnection()
 	return true
@@ -516,7 +520,6 @@ func handleSetupConfig(bytes []byte) string {
 	err := UnmarshalJson(bytes, params)
 	if err != nil {
 		logError("unmarshalRawConfig error %v", err)
-		_ = applyConfig(defaultSetupParams())
 		return err.Error()
 	}
 	err = applyConfig(params)
@@ -543,6 +546,9 @@ func init() {
 		})
 	}
 	statistic.DefaultRequestNotify = func(c statistic.Tracker) {
+		if !requestEventsEnabled.Load() {
+			return
+		}
 		sendMessage(Message{
 			Type: RequestMessage,
 			Data: c,

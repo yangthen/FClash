@@ -550,5 +550,13 @@
   "geoSkipped": "{name} skipped",
   "geoUpdated": "{name} updated",
   "secondsCount": "{count} seconds",
-  "entriesCount": "{count} entries"
+  "entriesCount": "{count} entries",
+  "dragToReorder": "Drag to reorder",
+  "configPending": "Configuration pending",
+  "configApplying": "Applying configuration",
+  "configApplied": "Configuration applied",
+  "configFailed": "Configuration failed",
+  "configApply": "Apply configuration",
+  "closeGuiKeepRunning": "Close interface, keep proxy running",
+  "closeGuiKeepRunningDesc": "The interface and tray will close. Reopen FClash to manage the background proxy."
 }

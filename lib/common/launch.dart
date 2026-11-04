@@ -12,7 +12,8 @@ class AutoLaunch {
 
   AutoLaunch._internal() {
     launchAtStartup.setup(
-      appName: appName,
+      // Preserve the existing startup registration when renaming the executable.
+      appName: 'FlClash',
       appPath: Platform.resolvedExecutable,
     );
   }
@@ -38,13 +39,12 @@ class AutoLaunch {
     if (kDebugMode) {
       return;
     }
-    if (await isEnable == isAutoLaunch) return;
     if (isAutoLaunch == true) {
-      enable();
-    } else {
-      disable();
+      await enable();
+    } else if (await isEnable) {
+      await disable();
     }
   }
 }
 
-final autoLaunch = system.isDesktop ? AutoLaunch() : null;
+final autoLaunch = system.isDesktop && !safeMode ? AutoLaunch() : null;

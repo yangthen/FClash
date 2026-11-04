@@ -269,6 +269,24 @@ abstract class FallbackFilter with _$FallbackFilter {
 }
 
 @freezed
+abstract class DnsPolicy with _$DnsPolicy {
+  const factory DnsPolicy({required String domain, required String server}) =
+      _DnsPolicy;
+
+  factory DnsPolicy.fromJson(Map<String, Object?> json) =>
+      _$DnsPolicyFromJson(json);
+}
+
+List<DnsPolicy> dnsPoliciesFromJson(Map<String, dynamic> json) => [
+  for (final entry in json.entries)
+    DnsPolicy(domain: entry.key, server: entry.value.toString()),
+];
+
+Map<String, String> dnsPoliciesToJson(List<DnsPolicy> policies) => {
+  for (final policy in policies) policy.domain: policy.server,
+};
+
+@freezed
 abstract class Dns with _$Dns {
   const factory Dns({
     @Default(true) bool enable,
@@ -290,13 +308,17 @@ abstract class Dns with _$Dns {
     @Default(['*.lan', 'localhost.ptlogin2.qq.com'])
     @JsonKey(name: 'fake-ip-filter')
     List<String> fakeIpFilter,
-    @Default({
-      'www.baidu.com': '114.114.114.114',
-      '+.internal.crop.com': '10.0.0.1',
-      'geosite:cn': 'https://doh.pub/dns-query',
-    })
-    @JsonKey(name: 'nameserver-policy')
-    Map<String, String> nameserverPolicy,
+    @Default([
+      DnsPolicy(domain: 'www.baidu.com', server: '114.114.114.114'),
+      DnsPolicy(domain: '+.internal.crop.com', server: '10.0.0.1'),
+      DnsPolicy(domain: 'geosite:cn', server: 'https://doh.pub/dns-query'),
+    ])
+    @JsonKey(
+      name: 'nameserver-policy',
+      fromJson: dnsPoliciesFromJson,
+      toJson: dnsPoliciesToJson,
+    )
+    List<DnsPolicy> nameserverPolicy,
     @Default(['https://doh.pub/dns-query', 'https://dns.alidns.com/dns-query'])
     List<String> nameserver,
     @Default(['tls://8.8.4.4', 'tls://1.1.1.1']) List<String> fallback,
@@ -339,6 +361,7 @@ abstract class Rule with _$Rule {
 
   factory Rule.init() {
     return Rule(
+      id: snowflake.id,
       ruleAction: RuleAction.DOMAIN,
       ruleTarget: RuleTarget.DIRECT.name,
     );

@@ -292,7 +292,7 @@ final class ProfilesProvider
   }
 }
 
-String _$profilesHash() => r'a977548501ae750bc4fcc0f59dc0a4994ced7c91';
+String _$profilesHash() => r'2592bafbce66492733378be7a0c561530c036dc1';
 
 abstract class _$Profiles extends $Notifier<List<Profile>> {
   List<Profile> build();
@@ -336,7 +336,7 @@ final class ScriptsProvider
   Scripts create() => Scripts();
 }
 
-String _$scriptsHash() => r'363611e5787ec107459446f305e35dada3e07cad';
+String _$scriptsHash() => r'6a3ea1316b906e755529392b1bd0475fd68c7c80';
 
 abstract class _$Scripts extends $StreamNotifier<List<Script>> {
   Stream<List<Script>> build();
@@ -449,7 +449,7 @@ final class GlobalRulesProvider
   GlobalRules create() => GlobalRules();
 }
 
-String _$globalRulesHash() => r'209223171050c7d26de48537f8ff4f14d6fe5b1d';
+String _$globalRulesHash() => r'e0d103181d3ea8158a597938a45bde2bf73da925';
 
 abstract class _$GlobalRules extends $StreamNotifier<List<Rule>> {
   Stream<List<Rule>> build();
@@ -510,7 +510,7 @@ final class ProfileAddedRulesProvider
   }
 }
 
-String _$profileAddedRulesHash() => r'eae5aef723d5fa858c35a530bca21aa0f80f00ad';
+String _$profileAddedRulesHash() => r'c9a8f0782c7f5e9788bb9c4eb0821cad976cf08d';
 
 final class ProfileAddedRulesFamily extends $Family
     with
@@ -600,7 +600,7 @@ final class ProfileCustomRulesProvider
 }
 
 String _$profileCustomRulesHash() =>
-    r'89a8547b746e4c4ff0b1f5ac2dd0b573d1e5892e';
+    r'3767f7e56c80512b0fbfd296b1708fed2718b8a1';
 
 final class ProfileCustomRulesFamily extends $Family
     with
@@ -689,7 +689,7 @@ final class ProxyGroupsProvider
   }
 }
 
-String _$proxyGroupsHash() => r'78aa494f41c48600612d1376e1f4a931e8a21aef';
+String _$proxyGroupsHash() => r'5cbe7438e18d7cad9fae7ee61fe45bd8605259f6';
 
 final class ProxyGroupsFamily extends $Family
     with
@@ -781,7 +781,7 @@ final class ProfileDisabledRuleIdsProvider
 }
 
 String _$profileDisabledRuleIdsHash() =>
-    r'8fdd7dc5c5ff51e7d9474c0351887073e3f8d468';
+    r'9bb1e8daf343a27172dbe8af5eb5a69e05b597d3';
 
 final class ProfileDisabledRuleIdsFamily extends $Family
     with

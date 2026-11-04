@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_ext/window_ext.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:fl_clash/common/visibility.dart';
 
 class WindowManager extends ConsumerStatefulWidget {
   final Widget child;
@@ -50,6 +51,7 @@ class _WindowContainerState extends ConsumerState<WindowManager>
 
   @override
   void onWindowFocus() {
+    appVisibility.value = true;
     super.onWindowFocus();
     commonPrint.log('focus');
     render?.resume();
@@ -84,6 +86,7 @@ class _WindowContainerState extends ConsumerState<WindowManager>
 
   @override
   void onWindowMinimize() async {
+    appVisibility.value = false;
     ref.read(storeActionProvider.notifier).savePreferencesDebounce();
     commonPrint.log('minimize');
     render?.pause();
@@ -92,6 +95,7 @@ class _WindowContainerState extends ConsumerState<WindowManager>
 
   @override
   void onWindowRestore() {
+    appVisibility.value = true;
     commonPrint.log('restore');
     render?.resume();
     super.onWindowRestore();

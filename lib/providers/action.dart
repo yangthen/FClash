@@ -1,8 +1,14 @@
+import 'package:fl_clash/config/store.dart';
 import 'dart:async';
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/core.dart';
+import 'package:fl_clash/config/application.dart';
+import 'package:fl_clash/core/operation_queue.dart';
+import 'package:fl_clash/core/desktop/lifecycle.dart';
+import 'package:fl_clash/core/desktop/proxy.dart';
+import 'package:fl_clash/common/visibility.dart';
 import 'package:fl_clash/database/database.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -19,6 +25,7 @@ part 'generated/action.g.dart';
 
 @Riverpod(keepAlive: true)
 class CommonAction extends _$CommonAction {
+  Future<void>? _trafficUpdate;
   @override
   void build() {}
 
@@ -55,13 +62,36 @@ class CommonAction extends _$CommonAction {
   }
 
   Future<void> updateTraffic() async {
+    if (_trafficUpdate != null) return _trafficUpdate;
+    final update = _updateTraffic();
+    _trafficUpdate = update;
+    try {
+      await update;
+    } finally {
+      _trafficUpdate = null;
+    }
+  }
+
+  Future<void> _updateTraffic() async {
+    if (!appVisibility.value && !ref.read(appSettingProvider).showTrayTitle) {
+      return;
+    }
     final onlyStatisticsProxy = ref.read(
       appSettingProvider.select((state) => state.onlyStatisticsProxy),
     );
-    final traffic = await coreController.getTraffic(onlyStatisticsProxy);
-    ref.read(trafficsProvider.notifier).addTraffic(traffic);
-    ref.read(totalTrafficProvider.notifier).value = await coreController
-        .getTotalTraffic(onlyStatisticsProxy);
+    final startedAt = ref.read(setupActionProvider.notifier).startTime;
+    try {
+      final traffic = await coreController.getTraffic(onlyStatisticsProxy);
+      final total = await coreController.getTotalTraffic(onlyStatisticsProxy);
+      if (!ref.mounted ||
+          startedAt != ref.read(setupActionProvider.notifier).startTime) {
+        return;
+      }
+      ref.read(trafficsProvider.notifier).addTraffic(traffic);
+      ref.read(totalTrafficProvider.notifier).value = total;
+    } catch (error) {
+      commonPrint.log('Traffic update failed: $error');
+    }
   }
 
   Future<void> autoCheckUpdate() async {
@@ -112,6 +142,7 @@ class CommonAction extends _$CommonAction {
 
 @Riverpod(keepAlive: true)
 class SetupAction extends _$SetupAction {
+  final _configQueue = OperationQueue();
   Timer? _updateTimer;
   DateTime? startTime;
 
@@ -137,13 +168,15 @@ class SetupAction extends _$SetupAction {
   }
 
   Future<void> _handleStart() async {
+    _updateTimer?.cancel();
+    if (!ref.read(suspendProvider)) {
+      if (!await coreController.startListener()) {
+        throw StateError('Core could not start listeners');
+      }
+    }
     startTime ??= DateTime.now();
-    //The local status must be updated when performing the run task
     ref.read(commonActionProvider.notifier).updateRunTime();
     ref.read(commonActionProvider.notifier).updateTraffic();
-    if (!ref.read(suspendProvider)) {
-      await coreController.startListener();
-    }
     _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       ref.read(commonActionProvider.notifier).updateRunTime();
       ref.read(commonActionProvider.notifier).updateTraffic();
@@ -155,10 +188,12 @@ class SetupAction extends _$SetupAction {
   }
 
   Future handleStop() async {
+    if (!await coreController.stopListener()) {
+      throw StateError('Core could not stop listeners');
+    }
     startTime = null;
     _updateTimer?.cancel();
     _updateTimer = null;
-    await coreController.stopListener();
   }
 
   Future<void> initStatus() async {
@@ -169,6 +204,20 @@ class SetupAction extends _$SetupAction {
     commonPrint.log('init status');
     if (system.isAndroid) {
       await _updateStartTime();
+    } else {
+      final runtime = await coreController.desktopRuntime();
+      if (runtime['running'] == true) {
+        startTime = DateTime.fromMillisecondsSinceEpoch(
+          (runtime['startedAt'] as num).toInt(),
+        );
+        await _handleStart();
+        final digest = runtime['configDigest'] as String?;
+        if (digest?.isNotEmpty == true) {
+          configApplication.adopt(digest!);
+        }
+        globalState.needInitStatus = false;
+        return;
+      }
     }
     final status = isStart == true
         ? true
@@ -181,6 +230,11 @@ class SetupAction extends _$SetupAction {
   }
 
   Future<void> updateStatus(bool isStart, {bool isInit = false}) async {
+    return coreLifecycle.run(() => _updateStatus(isStart, isInit: isInit));
+  }
+
+  Future<void> _updateStatus(bool isStart, {bool isInit = false}) async {
+    if (safeMode) return;
     if (isStart) {
       if (!isInit) {
         final res = await ref
@@ -215,18 +269,21 @@ class SetupAction extends _$SetupAction {
   }
 
   Future<void> updateConfigDebounce() async {
+    if (safeMode) return;
     debouncer.call(FunctionTag.updateConfig, () async {
-      await globalState.safeRun(() async {
-        final updateParams = ref.read(updateParamsProvider);
-        final res = await _requestAdmin(updateParams.tun.enable);
-        if (res.isError) return;
-        final realTunEnable = ref.read(realTunEnableProvider);
-        final message = await coreController.updateConfig(
-          updateParams.copyWith.tun(enable: realTunEnable),
-        );
-        ref.read(checkIpNumProvider.notifier).add();
-        if (message.isNotEmpty) throw message;
-      });
+      await coreLifecycle.run(
+        () => globalState.safeRun(() async {
+          final updateParams = ref.read(updateParamsProvider);
+          final res = await _requestAdmin(updateParams.tun.enable);
+          if (res.isError) return;
+          final realTunEnable = ref.read(realTunEnableProvider);
+          final message = await coreController.updateConfig(
+            updateParams.copyWith.tun(enable: realTunEnable),
+          );
+          ref.read(checkIpNumProvider.notifier).add();
+          if (message.isNotEmpty) throw message;
+        }),
+      );
     });
   }
 
@@ -266,16 +323,26 @@ class SetupAction extends _$SetupAction {
   Future<void> applyProfile({
     bool silence = false,
     bool force = false,
-    VoidCallback? preloadInvoke,
+    FutureOr<void> Function()? preloadInvoke,
   }) async {
-    await _setupConfig(
-      force: force,
-      silence: silence,
-      preloadInvoke: preloadInvoke,
-      onUpdated: () async {
-        await ref.read(proxiesActionProvider.notifier).updateGroups();
-        await ref.read(providersProvider.notifier).syncProviders();
-      },
+    if (safeMode) {
+      configApplication.markPending();
+      return;
+    }
+    final revision = configApplication.request();
+    await coreLifecycle.run(
+      () => _configQueue.run(
+        () => _setupConfig(
+          revision: revision,
+          force: force,
+          silence: silence,
+          preloadInvoke: preloadInvoke,
+          onUpdated: () async {
+            await ref.read(proxiesActionProvider.notifier).updateGroups();
+            await ref.read(providersProvider.notifier).syncProviders();
+          },
+        ),
+      ),
     );
   }
 
@@ -367,9 +434,10 @@ class SetupAction extends _$SetupAction {
   }
 
   Future<void> _setupConfig({
+    required int revision,
     bool force = false,
     bool silence = false,
-    VoidCallback? preloadInvoke,
+    FutureOr<void> Function()? preloadInvoke,
     FutureOr Function()? onUpdated,
   }) async {
     var profile = ref.read(currentProfileProvider);
@@ -396,20 +464,28 @@ class SetupAction extends _$SetupAction {
     );
     final yamlString = vm2.a;
     final yamlMd5 = vm2.b;
-    if (yamlMd5 == globalState.lastConfigMd5 && force == false) return;
+    if (!configApplication.isCurrent(revision)) return;
     await globalState.loadingRun(
       () async {
         final configFilePath = await appPath.configFilePath;
-        await File(configFilePath).safeWriteAsString(yamlString);
-        globalState.lastConfigMd5 = yamlMd5;
-        final message = await coreController.setupConfig(
-          setupState: setupState,
-          params: _setupParams,
-          preloadInvoke: preloadInvoke,
+        await configApplication.apply(
+          revision: revision,
+          digest: yamlMd5,
+          force: force,
+          operation: () async {
+            await ConfigStore().apply(
+              path: configFilePath,
+              content: yamlString,
+              validate: coreController.validateConfig,
+              isCurrent: () => configApplication.isCurrent(revision),
+              activate: () => coreController.setupConfig(
+                setupState: setupState,
+                params: _setupParams,
+                preloadInvoke: preloadInvoke,
+              ),
+            );
+          },
         );
-        if (message.isNotEmpty && !message.endsWith('is empty')) {
-          throw message;
-        }
         ref.read(checkIpNumProvider.notifier).add();
         await onUpdated?.call();
       },
@@ -499,17 +575,22 @@ class CoreAction extends _$CoreAction {
 
   Future<void> connectCore() async {
     ref.read(coreStatusProvider.notifier).value = CoreStatus.connecting;
-    final result = await Future.wait([
-      coreController.preload(),
-      Future.delayed(const Duration(milliseconds: 300)),
-    ]);
-    final String message = result[0];
-    if (message.isNotEmpty) {
+    try {
+      final result = await Future.wait([
+        coreController.preload(),
+        Future.delayed(const Duration(milliseconds: 300)),
+      ]);
+      final String message = result[0];
+      if (message.isNotEmpty) {
+        ref.read(coreStatusProvider.notifier).value = CoreStatus.disconnected;
+        globalState.showNotifier(message);
+        return;
+      }
+      ref.read(coreStatusProvider.notifier).value = CoreStatus.connected;
+    } catch (error) {
       ref.read(coreStatusProvider.notifier).value = CoreStatus.disconnected;
-      globalState.showNotifier(message);
-      return;
+      globalState.showNotifier(error.toString());
     }
-    ref.read(coreStatusProvider.notifier).value = CoreStatus.connected;
   }
 
   Future<Result<bool>> requestAdmin(bool enableTun) async {
@@ -532,11 +613,17 @@ class CoreAction extends _$CoreAction {
   }
 
   Future<void> restartCore([bool start = false]) async {
+    return coreLifecycle.run(() => _restartCore(start));
+  }
+
+  Future<void> _restartCore(bool start) async {
+    configApplication.invalidate();
     final isDisconnected =
         ref.read(coreStatusProvider) == CoreStatus.disconnected;
     ref.read(coreStatusProvider.notifier).value = CoreStatus.disconnected;
     await coreController.shutdown(!isDisconnected);
     await connectCore();
+    if (ref.read(coreStatusProvider) != CoreStatus.connected) return;
     await initCore();
     if (start || ref.read(isStartProvider)) {
       await ref
@@ -560,6 +647,7 @@ class CoreAction extends _$CoreAction {
 
 @Riverpod(keepAlive: true)
 class SystemAction extends _$SystemAction {
+  Future<void>? _exiting;
   @override
   void build() {}
 
@@ -575,21 +663,36 @@ class SystemAction extends _$SystemAction {
   }
 
   Future<void> handleExit([bool needSave = false]) async {
-    Future.delayed(const Duration(seconds: 3), () {
-      system.exit();
-    });
+    return _exiting ??= _exit(keepRunning: false);
+  }
+
+  Future<void> closeGui() async {
+    if (!system.isDesktop || !ref.read(isStartProvider)) return handleExit();
+    return _exiting ??= _exit(keepRunning: true);
+  }
+
+  Future<void> _exit({required bool keepRunning}) async {
+    final fallback = Timer(const Duration(seconds: 10), system.exit);
     try {
+      debouncer.cancel(FunctionTag.savePreferences);
+      await flushDatabaseWrites();
+      await preferences.saveConfig(ref.read(configProvider));
+      await desktopProxy.close(stop: !keepRunning);
       await Future.wait([
-        if (needSave) preferences.saveConfig(ref.read(configProvider)),
-        if (macOS != null) macOS!.updateDns(true),
-        if (proxy != null) proxy!.stopProxy(),
+        if (!keepRunning && macOS != null) macOS!.updateDns(true),
         if (tray != null) tray!.destroy(),
       ]);
-      await window?.close();
-      await coreController.destroy();
+      await coreLifecycle.run(() async {
+        if (keepRunning) {
+          await coreController.detach();
+        } else {
+          await coreController.destroy();
+        }
+      });
       commonPrint.log('exit');
     } finally {
-      system.exit();
+      fallback.cancel();
+      await system.exit();
     }
   }
 

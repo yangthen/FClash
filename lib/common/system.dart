@@ -42,6 +42,7 @@ class System {
   }
 
   Future<bool> checkIsAdmin() async {
+    if (safeMode) return false;
     final corePath = appPath.corePath.replaceAll(' ', '\\\\ ');
     if (system.isWindows) {
       final result = await windows?.checkService();
@@ -69,6 +70,7 @@ class System {
   }
 
   Future<AuthorizeCode> authorizeCore() async {
+    if (safeMode) return AuthorizeCode.error;
     if (system.isAndroid) {
       return AuthorizeCode.error;
     }
@@ -334,7 +336,7 @@ class Windows {
   }
 }
 
-final windows = system.isWindows ? Windows() : null;
+final windows = system.isWindows && !safeMode ? Windows() : null;
 
 class MacOS {
   static MacOS? _instance;
@@ -433,4 +435,4 @@ class MacOS {
   }
 }
 
-final macOS = system.isMacOS ? MacOS() : null;
+final macOS = system.isMacOS && !safeMode ? MacOS() : null;

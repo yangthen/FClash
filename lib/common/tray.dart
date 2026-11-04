@@ -188,6 +188,16 @@ class Tray {
         await systemAction.handleExit();
       },
     );
+    if (trayState.isStart) {
+      menuItems.add(
+        MenuItem(
+          label: appLocalizations.closeGuiKeepRunning,
+          onClick: (_) async {
+            await systemAction.closeGui();
+          },
+        ),
+      );
+    }
     menuItems.add(exitMenuItem);
     final menu = Menu(items: menuItems);
     await trayManager.setContextMenu(menu);

@@ -7,13 +7,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'constant.dart';
 
 class Preferences {
+  Config? _safeConfig;
   static Preferences? _instance;
   Completer<SharedPreferences?> sharedPreferencesCompleter = Completer();
 
   Future<bool> get isInit async =>
-      await sharedPreferencesCompleter.future != null;
+      safeMode || await sharedPreferencesCompleter.future != null;
 
   Preferences._internal() {
+    if (safeMode) {
+      sharedPreferencesCompleter.complete(null);
+      return;
+    }
     SharedPreferences.getInstance()
         .then((value) => sharedPreferencesCompleter.complete(value))
         .onError((_, _) => sharedPreferencesCompleter.complete(null));
@@ -40,6 +45,7 @@ class Preferences {
   }
 
   Future<Map<String, Object?>?> getConfigMap() async {
+    if (safeMode) return _safeConfig?.toJson();
     try {
       final preferences = await sharedPreferencesCompleter.future;
       final configString = preferences?.getString(configKey);
@@ -81,6 +87,10 @@ class Preferences {
   }
 
   Future<bool> saveConfig(Config config) async {
+    if (safeMode) {
+      _safeConfig = config;
+      return true;
+    }
     final preferences = await sharedPreferencesCompleter.future;
     return preferences?.setString(configKey, json.encode(config)) ?? false;
   }

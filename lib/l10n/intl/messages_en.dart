@@ -224,12 +224,31 @@ class MessageLookup extends MessageLookupByLibrary {
     "clearData": MessageLookupByLibrary.simpleMessage("Clear Data"),
     "clipboardExport": MessageLookupByLibrary.simpleMessage("Export clipboard"),
     "clipboardImport": MessageLookupByLibrary.simpleMessage("Clipboard import"),
+    "closeGuiKeepRunning": MessageLookupByLibrary.simpleMessage(
+      "Close interface, keep proxy running",
+    ),
+    "closeGuiKeepRunningDesc": MessageLookupByLibrary.simpleMessage(
+      "The interface and tray will close. Reopen FClash to manage the background proxy.",
+    ),
     "color": MessageLookupByLibrary.simpleMessage("Color"),
     "colorSchemes": MessageLookupByLibrary.simpleMessage("Color schemes"),
     "columns": MessageLookupByLibrary.simpleMessage("Columns"),
     "compatible": MessageLookupByLibrary.simpleMessage("Compatibility mode"),
+    "configApplied": MessageLookupByLibrary.simpleMessage(
+      "Configuration applied",
+    ),
+    "configApply": MessageLookupByLibrary.simpleMessage("Apply configuration"),
+    "configApplying": MessageLookupByLibrary.simpleMessage(
+      "Applying configuration",
+    ),
     "configDataDetected": MessageLookupByLibrary.simpleMessage(
       "Data detected in configuration",
+    ),
+    "configFailed": MessageLookupByLibrary.simpleMessage(
+      "Configuration failed",
+    ),
+    "configPending": MessageLookupByLibrary.simpleMessage(
+      "Configuration pending",
     ),
     "confirm": MessageLookupByLibrary.simpleMessage("Confirm"),
     "confirmClearAllData": MessageLookupByLibrary.simpleMessage(
@@ -344,6 +363,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "domain": MessageLookupByLibrary.simpleMessage("Domain"),
     "download": MessageLookupByLibrary.simpleMessage("Download"),
+    "dragToReorder": MessageLookupByLibrary.simpleMessage("Drag to reorder"),
     "edit": MessageLookupByLibrary.simpleMessage("Edit"),
     "editGlobalRules": MessageLookupByLibrary.simpleMessage(
       "Edit global rules",

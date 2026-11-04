@@ -117,11 +117,12 @@ class _AddedRulesViewState extends ConsumerState<AddedRulesView> {
                   final rule = rules[index];
                   final position = ItemPosition.get(index, rules.length);
                   return ReorderableDelayedDragStartListener(
-                    key: ObjectKey(rule),
+                    key: ValueKey(rule.id),
                     index: index,
                     child: ItemPositionProvider(
                       position: position,
                       child: RuleItem(
+                        reorderIndex: index,
                         hasMatch: true,
                         isEditing: selectedRules.isNotEmpty,
                         rule: rule,

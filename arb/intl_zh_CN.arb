@@ -550,5 +550,13 @@
   "geoSkipped": "{name} 已跳过",
   "geoUpdated": "{name} 已更新",
   "secondsCount": "{count} 秒",
-  "entriesCount": "{count} 个条目"
+  "entriesCount": "{count} 个条目",
+  "dragToReorder": "拖动调整顺序",
+  "configPending": "配置待应用",
+  "configApplying": "正在应用配置",
+  "configApplied": "配置已生效",
+  "configFailed": "配置应用失败",
+  "configApply": "应用配置",
+  "closeGuiKeepRunning": "关闭界面，保持代理运行",
+  "closeGuiKeepRunningDesc": "界面和托盘将退出；重新打开 FClash 可管理后台代理。"
 }

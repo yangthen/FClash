@@ -1,3 +1,4 @@
+import 'package:fl_clash/common/event_buffer.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -23,8 +24,10 @@ class RealTunEnable extends _$RealTunEnable with AutoDisposeNotifierMixin {
 
 @Riverpod(keepAlive: true)
 class Logs extends _$Logs with AutoDisposeNotifierMixin {
+  EventBuffer<Log>? _buffer;
   @override
   FixedList<Log> build() {
+    ref.onDispose(() => _buffer?.dispose());
     return FixedList(0);
   }
 
@@ -32,10 +35,22 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
     if (!ref.mounted) {
       return;
     }
-    this.value = state.copyWith()..add(value);
+    _buffer ??= EventBuffer(
+      capacity: maxLength,
+      onFlush: (items) {
+        if (!ref.mounted) return;
+        final next = state.copyWith();
+        for (final item in items) {
+          next.add(item);
+        }
+        this.value = next;
+      },
+    );
+    _buffer!.add(value);
   }
 
   Future<bool> exportLogs() async {
+    _buffer?.flush();
     final logString = await encodeLogsTask(value.list);
     final tempFilePath = await appPath.tempFilePath;
     final file = File(tempFilePath);
@@ -48,13 +63,26 @@ class Logs extends _$Logs with AutoDisposeNotifierMixin {
 
 @Riverpod(keepAlive: true)
 class Requests extends _$Requests with AutoDisposeNotifierMixin {
+  EventBuffer<TrackerInfo>? _buffer;
   @override
   FixedList<TrackerInfo> build() {
+    ref.onDispose(() => _buffer?.dispose());
     return FixedList(0);
   }
 
   void addRequest(TrackerInfo value) {
-    this.value = state.copyWith()..add(value);
+    _buffer ??= EventBuffer(
+      capacity: maxLength,
+      onFlush: (items) {
+        if (!ref.mounted) return;
+        final next = state.copyWith();
+        for (final item in items) {
+          next.add(item);
+        }
+        this.value = next;
+      },
+    );
+    _buffer!.add(value);
   }
 }
 

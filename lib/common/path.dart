@@ -15,7 +15,32 @@ class AppPath {
 
   AppPath._internal() {
     appDirPath = join(dirname(Platform.resolvedExecutable));
-    getApplicationSupportDirectory().then((value) {
+    if (safeMode) {
+      const configured = String.fromEnvironment('FCLASH_DATA_DIR');
+      final directory = Directory(
+        configured.isEmpty
+            ? join(Directory.systemTemp.path, 'FClash-safe-$pid')
+            : configured,
+      );
+      directory.createSync(recursive: true);
+      Directory(join(directory.path, 'temp')).createSync(recursive: true);
+      Directory(join(directory.path, 'cache')).createSync(recursive: true);
+      Directory(join(directory.path, 'downloads')).createSync(recursive: true);
+      dataDir.complete(directory);
+      tempDir.complete(Directory(join(directory.path, 'temp')));
+      downloadDir.complete(Directory(join(directory.path, 'downloads')));
+      cacheDir.complete(Directory(join(directory.path, 'cache')));
+      return;
+    }
+    getApplicationSupportDirectory().then((value) async {
+      if (system.isLinux) {
+        final legacy = Directory(join(value.parent.path, 'FlClash'));
+        if (await File(join(legacy.path, 'database.sqlite')).exists() &&
+            !await File(join(value.path, 'database.sqlite')).exists()) {
+          dataDir.complete(legacy);
+          return;
+        }
+      }
       dataDir.complete(value);
     });
     getTemporaryDirectory().then((value) {

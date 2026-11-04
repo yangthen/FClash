@@ -37,11 +37,11 @@ The Makefile wraps `plugins/setup/buildkit/run_build_tool.sh`; prefer the `make`
 
 ## Flutter Development
 
-The project is pinned with FVM.
+Use Flutter 3.44.5 stable; FVM is optional.
 
 ```bash
 fvm flutter pub get
-fvm flutter run
+fvm flutter run --dart-define=FCLASH_SAFE_MODE=true
 fvm flutter test
 ```
 
@@ -49,7 +49,7 @@ Plain Flutter also works when the global SDK matches project constraints:
 
 ```bash
 flutter pub get
-flutter run
+flutter run --dart-define=FCLASH_SAFE_MODE=true
 flutter test
 ```
 
@@ -104,3 +104,13 @@ flutter test --reporter expanded
 ```
 
 Run `flutter analyze` locally before committing when practical.
+
+Host verification must use `FCLASH_SAFE_MODE=true`, optionally with an absolute `FCLASH_DATA_DIR`. Safe mode isolates data and preferences and does not start/attach a Core, change system proxy/DNS/TUN, register protocols, or change auto-start. Do not launch a normal host instance for verification.
+
+For a workspace-local Windows smoke build:
+
+```powershell
+flutter build windows --release --dart-define=FCLASH_SAFE_MODE=true --dart-define=FCLASH_DATA_DIR=C:/absolute/workspace/build/safe-data
+```
+
+Memory sampling is read-only. Target the recorded test PIDs with `scripts/measure_memory.ps1 -Scenario safe-ui -ProcessIds <pid> -OutputPath <csv>`. Record warm-up, build mode, subscription/configuration, visibility and whether Core is enabled; safe-mode GUI figures cannot establish a production before/after improvement.

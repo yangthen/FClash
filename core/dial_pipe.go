@@ -4,10 +4,12 @@ package main
 
 import (
 	"io"
+	"time"
 
 	"github.com/Microsoft/go-winio"
 )
 
 func dial(path string) (io.ReadWriteCloser, error) {
-	return winio.DialPipe(path, nil)
+	timeout := 500 * time.Millisecond
+	return winio.DialPipe(path, &timeout)
 }

@@ -75,6 +75,54 @@ void main() {
     expect(_top(tester, 'b'), lessThan(_top(tester, 'c')));
     expect(_top(tester, 'c'), lessThan(_top(tester, 'a')));
   });
+  testWidgets('visible handle supports pointer drag without long press', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: _TestApp(
+          child: ListInputPage(
+            title: 'Items',
+            items: ['a', 'b', 'c'],
+            titleBuilder: _textBuilder,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final handle = find.byType(ReorderHandle).first;
+    expect(find.byIcon(Icons.drag_handle), findsNWidgets(3));
+    final gesture = await tester.startGesture(tester.getCenter(handle));
+    await gesture.moveBy(const Offset(0, 125));
+    await tester.pump(const Duration(milliseconds: 300));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(_top(tester, 'b'), lessThan(_top(tester, 'a')));
+  });
+
+  testWidgets('DNS map editor keeps reordered domain entries', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: _TestApp(
+          child: MapInputPage(
+            title: 'DNS',
+            map: const {'first.cn': 'system', 'second.cn': 'dns'},
+            titleBuilder: (item) => Text(item.key),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    tester
+        .widget<ReorderableListView>(find.byType(ReorderableListView))
+        .onReorderItem!(0, 1);
+    await tester.pump();
+    expect(_top(tester, 'second.cn'), lessThan(_top(tester, 'first.cn')));
+  });
 }
 
 Widget _textBuilder(String value) {

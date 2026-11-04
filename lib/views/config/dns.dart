@@ -1,5 +1,6 @@
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
+import 'package:fl_clash/models/clash_config.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
@@ -377,7 +378,7 @@ class NameserverPolicyItem extends ConsumerWidget {
         blur: false,
         widget: MapInputPage(
           title: appLocalizations.nameserverPolicy,
-          map: nameserverPolicy,
+          map: dnsPoliciesToJson(nameserverPolicy),
           keyMaxLength: TextInputLimits.domain,
           valueMaxLength: TextInputLimits.dnsServer,
           titleBuilder: (item) => Text(item.key),
@@ -386,7 +387,13 @@ class NameserverPolicyItem extends ConsumerWidget {
         onChanged: (value) {
           ref
               .read(patchClashConfigProvider.notifier)
-              .update((state) => state.copyWith.dns(nameserverPolicy: value));
+              .update(
+                (state) => state.copyWith.dns(
+                  nameserverPolicy: dnsPoliciesFromJson(
+                    Map<String, dynamic>.from(value),
+                  ),
+                ),
+              );
         },
       ),
     );

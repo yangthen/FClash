@@ -4493,6 +4493,86 @@ class AppLocalizations {
       args: [count],
     );
   }
+
+  /// `Drag to reorder`
+  String get dragToReorder {
+    return Intl.message(
+      'Drag to reorder',
+      name: 'dragToReorder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Configuration pending`
+  String get configPending {
+    return Intl.message(
+      'Configuration pending',
+      name: 'configPending',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Applying configuration`
+  String get configApplying {
+    return Intl.message(
+      'Applying configuration',
+      name: 'configApplying',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Configuration applied`
+  String get configApplied {
+    return Intl.message(
+      'Configuration applied',
+      name: 'configApplied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Configuration failed`
+  String get configFailed {
+    return Intl.message(
+      'Configuration failed',
+      name: 'configFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apply configuration`
+  String get configApply {
+    return Intl.message(
+      'Apply configuration',
+      name: 'configApply',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Close interface, keep proxy running`
+  String get closeGuiKeepRunning {
+    return Intl.message(
+      'Close interface, keep proxy running',
+      name: 'closeGuiKeepRunning',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The interface and tray will close. Reopen FClash to manage the background proxy.`
+  String get closeGuiKeepRunningDesc {
+    return Intl.message(
+      'The interface and tray will close. Reopen FClash to manage the background proxy.',
+      name: 'closeGuiKeepRunningDesc',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<AppLocalizations> {

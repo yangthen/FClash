@@ -5,6 +5,7 @@ import 'package:fl_clash/models/config.dart';
 import 'package:flutter/material.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
+import 'visibility.dart';
 
 class Window {
   static Window? _instance;
@@ -21,7 +22,7 @@ class Window {
     if (!acquire) {
       exit(0);
     }
-    if (system.isWindows) {
+    if (system.isWindows && !safeMode) {
       protocol.register('clash');
       protocol.register('clashmeta');
       protocol.register('flclash');
@@ -70,6 +71,7 @@ class Window {
   }
 
   Future<void> show() async {
+    appVisibility.value = true;
     render?.resume();
     await windowManager.show();
     await windowManager.focus();
@@ -91,6 +93,7 @@ class Window {
   }
 
   Future<void> hide() async {
+    appVisibility.value = false;
     render?.pause();
     await windowManager.hide();
     await windowManager.setSkipTaskbar(true);

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:fl_clash/common/common.dart';
-import 'package:fl_clash/core/core.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/manager/hotkey_manager.dart';
 import 'package:fl_clash/manager/manager.dart';
@@ -25,6 +24,7 @@ class Application extends ConsumerStatefulWidget {
 
 class ApplicationState extends ConsumerState<Application> {
   Timer? _autoUpdateProfilesTaskTimer;
+  bool _disposed = false;
   bool _preHasVpn = false;
 
   final _pageTransitionsTheme = const PageTransitionsTheme(
@@ -83,9 +83,13 @@ class ApplicationState extends ConsumerState<Application> {
   }
 
   void _autoUpdateProfilesTask() {
+    if (_disposed) return;
     _autoUpdateProfilesTaskTimer = Timer(const Duration(minutes: 20), () async {
-      await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
-      _autoUpdateProfilesTask();
+      try {
+        await ref.read(profilesActionProvider.notifier).autoUpdateProfiles();
+      } finally {
+        _autoUpdateProfilesTask();
+      }
     });
   }
 
@@ -185,11 +189,10 @@ class ApplicationState extends ConsumerState<Application> {
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() {
+    _disposed = true;
     linkManager.destroy();
     _autoUpdateProfilesTaskTimer?.cancel();
-    await coreController.destroy();
-    await ref.read(systemActionProvider.notifier).handleExit();
     super.dispose();
   }
 }

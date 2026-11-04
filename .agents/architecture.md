@@ -7,13 +7,13 @@ The Go proxy core in `core/` operates in two modes.
 Android lib mode:
 
 - Go core is compiled as a C shared library, `libclash.so`, through `go build -buildmode=c-shared` with CGO.
-- Flutter calls it via FFI through the `service` plugin.
+- Flutter calls the service MethodChannel, Kotlin binds the remote service through AIDL, and JNI calls the Go shared library. The VPN and Core run in the Android `:remote` process.
 - Dart-side implementation: `lib/core/lib.dart` (`CoreLib`).
 
 Desktop core mode:
 
 - Go core runs as a separate process with `CGO_ENABLED=0`.
-- Flutter communicates via JSON over socket, using a Unix socket on macOS/Linux and TCP on Windows.
+- Flutter communicates using length-framed JSON through a Rust IPC bridge, with Unix sockets on macOS/Linux and named pipes on Windows. The endpoint is derived from the data directory so a new GUI can reconnect to a detached Core.
 - Dart-side implementation: `lib/core/service.dart` (`CoreService`).
 
 `lib/core/controller.dart` (`CoreController`) selects the implementation based on platform. `lib/core/interface.dart` defines the shared `CoreHandlerInterface`.
@@ -36,6 +36,12 @@ Provider files in `lib/providers/`:
 - `database.dart`: Drift database provider wrappers.
 
 `globalState` in `lib/state.dart` is a singleton holding app lifecycle, timers, theme, and start/stop state. Providers are generated into `lib/providers/generated/`.
+
+Configuration compilation lives in `lib/config/compiler.dart`; `lib/config/application.dart` tracks pending/applying/applied/failed state and commits the digest only on success. DNS policies are an ordered list internally and retain the legacy ordered-map JSON/YAML format on disk. Profile file/network operations live in `lib/profiles/repository.dart`.
+
+`lib/core/desktop/lifecycle.dart` serializes lifecycle and full configuration transitions. `lib/core/desktop/proxy.dart` serializes system-proxy updates and exit cleanup. Normal exit stops the Core and restores proxy/DNS; the explicit close-GUI command detaches and leaves the proxy running without a tray icon. Reopening reconnects and obtains Core runtime state. The current headless mode keeps Mihomo provider updates running; subscription-file refresh remains a GUI task.
+
+RPC requests are released on completion/timeout/disconnect. Logs and request histories use bounded batching, and event subscriptions follow visibility/page demand. A hidden GUI is different from a detached GUI: hiding retains Flutter; detaching exits it.
 
 ## Database
 

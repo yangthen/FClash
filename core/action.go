@@ -48,6 +48,10 @@ func handleAction(action *Action, result ActionResult) {
 		}
 	}()
 	switch action.Method {
+	case "requestEvents":
+		requestEventsEnabled.Store(action.Data.(bool))
+		result.success(true)
+		return
 	case initClashMethod:
 		paramsString := action.Data.(string)
 		result.success(handleInitClash(paramsString))

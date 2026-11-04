@@ -220,6 +220,9 @@ enum FontFamily {
 enum RouteMode { bypassPrivate, config }
 
 enum ActionMethod {
+  desktopRuntime,
+  terminateCore,
+  requestEvents,
   message,
   initClash,
   getIsInit,

@@ -1,3 +1,4 @@
+import 'reorder_handle.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/common.dart';
@@ -348,6 +349,7 @@ class _ListInputPageState extends ConsumerState<ListInputPage> {
         position: position,
         child: SelectedDecorationListItem(
           title: widget.titleBuilder(value),
+          trailing: ReorderHandle(index: index, enabled: !isEditing),
           isSelected: isSelected,
           isEditing: isEditing,
           onSelected: () {
@@ -594,12 +596,13 @@ class _MapInputPageState extends ConsumerState<MapInputPage> {
   }) {
     final position = ItemPosition.get(index, length);
     return ReorderableDelayedDragStartListener(
-      key: ValueKey(value),
+      key: ValueKey(value.key),
       index: index,
       child: ItemPositionProvider(
         position: position,
         child: SelectedDecorationListItem(
           title: widget.titleBuilder(value),
+          trailing: ReorderHandle(index: index, enabled: !isEditing),
           leading: widget.leadingBuilder != null
               ? widget.leadingBuilder!(value)
               : null,

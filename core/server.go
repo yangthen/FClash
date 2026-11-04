@@ -6,7 +6,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"io"
+	"os"
 	"sync"
+	"time"
 )
 
 var (
@@ -53,30 +55,44 @@ func readFrame(r io.Reader) ([]byte, error) {
 }
 
 func send(data []byte) {
-	if conn == nil {
-		logError("send conn nil")
-		return
-	}
 	connMu.Lock()
 	defer connMu.Unlock()
+	if conn == nil {
+		return
+	}
 	if err := writeFrame(conn, data); err != nil {
 		logError("server write error: %v", err)
 	}
 }
 
 func startServer(arg string) {
-	var err error
-	conn, err = dial(arg)
-	if err != nil {
-		panic(err.Error())
+	for {
+		serveConnection(arg)
+		time.Sleep(500 * time.Millisecond)
 	}
+}
 
-	defer func(conn io.Closer) {
-		_ = conn.Close()
-	}(conn)
+func serveConnection(arg string) {
+	var err error
+	connection, err := dial(arg)
+	if err != nil {
+		return
+	}
+	connMu.Lock()
+	conn = connection
+	connMu.Unlock()
+
+	defer func() {
+		connMu.Lock()
+		conn = nil
+		connMu.Unlock()
+		_ = connection.Close()
+		requestEventsEnabled.Store(false)
+		handleStopLog()
+	}()
 
 	for {
-		data, err := readFrame(conn)
+		data, err := readFrame(connection)
 		if err != nil {
 			if err != io.EOF {
 				logError("server read error: %v", err)
@@ -102,5 +118,18 @@ func startServer(arg string) {
 }
 
 func nextHandle(action *Action, result ActionResult) bool {
+	switch action.Method {
+	case "desktopRuntime":
+		runLock.Lock()
+		data := map[string]any{"running": isRunning, "startedAt": startedAt, "configDigest": activeConfigDigest}
+		runLock.Unlock()
+		result.success(data)
+		return true
+	case "terminateCore":
+		handleShutdown()
+		result.success(true)
+		go func() { time.Sleep(50 * time.Millisecond); os.Exit(0) }()
+		return true
+	}
 	return false
 }

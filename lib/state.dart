@@ -36,9 +36,9 @@ class GlobalState {
 
   // ignore: deprecated_member_use
   CorePalette? corePalette;
-  String? lastConfigMd5;
   VpnState? lastVpnState;
   bool isAttach = false;
+  Future<void>? _attaching;
 
   GlobalState._internal();
 
@@ -299,11 +299,16 @@ class GlobalState {
     if (isAttach == true) {
       return;
     }
-    await _initApp();
+    _attaching ??= _initApp();
+    await _attaching;
     isAttach = true;
   }
 
   Future<void> _initApp() async {
+    if (safeMode) {
+      await window?.show();
+      return;
+    }
     FlutterError.onError = (details) {
       Future.microtask(() {
         commonPrint.log(
@@ -325,6 +330,7 @@ class GlobalState {
     await _handlerDisclaimer();
     await _showCrashlyticsTip();
     await container.read(coreActionProvider.notifier).connectCore();
+    if (container.read(coreStatusProvider) != CoreStatus.connected) return;
     await container.read(coreActionProvider.notifier).initCore();
     await container.read(setupActionProvider.notifier).initStatus();
     container.read(initProvider.notifier).value = true;

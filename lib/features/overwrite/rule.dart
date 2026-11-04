@@ -15,6 +15,7 @@ final ruleItemHeight =
     12;
 
 class RuleItem extends StatelessWidget {
+  final int? reorderIndex;
   final bool isSelected;
   final bool isEditing;
   final Rule rule;
@@ -25,6 +26,7 @@ class RuleItem extends StatelessWidget {
 
   const RuleItem({
     super.key,
+    this.reorderIndex,
     required this.isSelected,
     required this.rule,
     required this.onSelected,
@@ -84,6 +86,9 @@ class RuleItem extends StatelessWidget {
     final vm2 = _checkInvalid(context);
     final invalid = vm2.a;
     return SelectedDecorationListItem(
+      trailing: reorderIndex == null
+          ? null
+          : ReorderHandle(index: reorderIndex!, enabled: !isEditing),
       minVerticalPadding: 0,
       isSelected: isSelected,
       isEditing: isEditing,

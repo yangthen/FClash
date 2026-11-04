@@ -550,5 +550,13 @@
   "geoSkipped": "{name} スキップ済み",
   "geoUpdated": "{name} 更新済み",
   "secondsCount": "{count} 秒",
-  "entriesCount": "{count} エントリ"
+  "entriesCount": "{count} エントリ",
+  "dragToReorder": "ドラッグして並べ替え",
+  "configPending": "設定の適用待ち",
+  "configApplying": "設定を適用中",
+  "configApplied": "設定を適用済み",
+  "configFailed": "設定の適用に失敗",
+  "configApply": "設定を適用",
+  "closeGuiKeepRunning": "画面を閉じてプロキシを継続",
+  "closeGuiKeepRunningDesc": "画面とトレイを終了します。管理するには FClash を再度開いてください。"
 }

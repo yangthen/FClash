@@ -10,6 +10,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_clash/common/visibility.dart';
+import 'package:fl_clash/core/desktop/lifecycle.dart';
 
 class AppStateManager extends ConsumerStatefulWidget {
   final Widget child;
@@ -49,12 +51,15 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       final isStart = ref.read(isStartProvider);
       if (prev != next && isStart) {
         debouncer.call(FunctionTag.suspend, () async {
-          if (next == true) {
-            await coreController.stopListener();
-          } else {
-            await coreController.startListener();
-          }
-          ref.read(checkIpNumProvider.notifier).add();
+          await coreLifecycle.run(() async {
+            if (!mounted || !ref.read(isStartProvider)) return;
+            if (ref.read(suspendProvider)) {
+              await coreController.stopListener();
+            } else {
+              await coreController.startListener();
+            }
+            ref.read(checkIpNumProvider.notifier).add();
+          });
         });
       }
     });
@@ -80,6 +85,9 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
 
   @override
   Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (!system.isDesktop) {
+      appVisibility.value = state == AppLifecycleState.resumed;
+    }
     commonPrint.log('$state');
     if (state == AppLifecycleState.resumed) {
       permissions.check();

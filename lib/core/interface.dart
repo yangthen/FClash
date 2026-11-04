@@ -75,6 +75,7 @@ mixin CoreInterface {
 }
 
 abstract class CoreHandlerInterface with CoreInterface {
+  Future<void> detach() async {}
   Completer get completer;
 
   FutureOr<bool> destroy();
@@ -91,7 +92,7 @@ abstract class CoreHandlerInterface with CoreInterface {
         'Invoke pre ${method.name} timeout $e',
         logLevel: LogLevel.error,
       );
-      return null;
+      rethrow;
     }
     return await utils.handleWatch(
       onStart: () {
@@ -113,6 +114,10 @@ abstract class CoreHandlerInterface with CoreInterface {
   });
 
   Future<T> parasResult<T>(ActionResult result) async {
+    if (result.code != ResultType.success &&
+        result.method != ActionMethod.getConfig) {
+      throw StateError(result.data.toString());
+    }
     return switch (result.method) {
       ActionMethod.getConfig => result.toResult as T,
       _ => result.data as T,
@@ -147,7 +152,7 @@ abstract class CoreHandlerInterface with CoreInterface {
           method: ActionMethod.validateConfig,
           data: path,
         ) ??
-        '';
+        (throw StateError('Core returned no validation result'));
   }
 
   @override
@@ -156,13 +161,13 @@ abstract class CoreHandlerInterface with CoreInterface {
           method: ActionMethod.updateConfig,
           data: json.encode(updateParams),
         ) ??
-        '';
+        (throw StateError('Core returned no update result'));
   }
 
   @override
   Future<Result> getConfig(String path) async {
     final res = await _invoke(method: ActionMethod.getConfig, data: path);
-    return res ?? Result.success({});
+    return res ?? Result.error('Core returned no configuration');
   }
 
   @override
@@ -171,7 +176,7 @@ abstract class CoreHandlerInterface with CoreInterface {
           method: ActionMethod.setupConfig,
           data: json.encode(setupParams),
         ) ??
-        '';
+        (throw StateError('Core returned no setup result'));
   }
 
   @override
@@ -298,12 +303,12 @@ abstract class CoreHandlerInterface with CoreInterface {
 
   @override
   FutureOr<void> startLog() {
-    _invoke(method: ActionMethod.startLog);
+    return _invoke(method: ActionMethod.startLog).then((_) {});
   }
 
   @override
   FutureOr<void> stopLog() {
-    _invoke<bool>(method: ActionMethod.stopLog);
+    return _invoke<bool>(method: ActionMethod.stopLog).then((_) {});
   }
 
   @override

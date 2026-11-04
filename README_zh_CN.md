@@ -1,3 +1,5 @@
+> **FClash** — 本仓库基于 FlClash v0.8.94 开发。产品名称为 FClash，版本规则见 AGENTS.md，迭代内容见 [0.8.95 发布说明](releases/0.8.95.md)。
+
 <div>
 
 [**English**](README.md)
