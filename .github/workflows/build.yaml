@@ -79,13 +79,32 @@ jobs:
 
       - name: Setup Android Signing
         if: startsWith(matrix.platform,'android')
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          SERVICE_JSON: ${{ secrets.SERVICE_JSON }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.KEYSTORE }}" | base64 --decode > android/app/keystore.jks
-          echo "${{ secrets.SERVICE_JSON }}" | base64 --decode > android/app/google-services.json
+          set -euo pipefail
+          if [ -z "$KEYSTORE" ] || [ -z "$KEY_ALIAS" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Configure KEYSTORE, KEY_ALIAS, STORE_PASSWORD and KEY_PASSWORD using the FClash release signing key. Refusing to publish a .dev build."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE" | base64 --decode > android/app/keystore.jks
+          keytool -exportcert -keystore android/app/keystore.jks -alias "$KEY_ALIAS" -storepass:env STORE_PASSWORD -file "$RUNNER_TEMP/fclash-release-cert.der"
+          actual_cert=$(sha256sum "$RUNNER_TEMP/fclash-release-cert.der" | cut -d ' ' -f1)
+          if [ "$actual_cert" != "3031c1bfd3f384b9858284b5c5b7ab61fc68763e552558878b5df2e734af63a4" ]; then
+            echo "::error::Android signing certificate does not match the FClash release key."
+            exit 1
+          fi
+          if [ -n "$SERVICE_JSON" ]; then
+            printf '%s' "$SERVICE_JSON" | base64 --decode > android/app/google-services.json
+          fi
           {
-            echo "keyAlias=${{ secrets.KEY_ALIAS }}"
-            echo "storePassword=${{ secrets.STORE_PASSWORD }}"
-            echo "keyPassword=${{ secrets.KEY_PASSWORD }}"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'storePassword=%s\n' "$STORE_PASSWORD"
+            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
           } >> android/local.properties
 
       - name: Setup Go

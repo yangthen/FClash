@@ -1,4 +1,4 @@
-package com.follow.clash.models
+package com.follow.fclash.models
 
 import com.follow.clash.service.models.VpnOptions
 import com.google.gson.annotations.SerializedName

@@ -1,4 +1,15 @@
 pluginManagement {
+    buildscript {
+        repositories {
+            google()
+            mavenCentral()
+        }
+        dependencies {
+            // Kotlin 2.4 metadata requires R8 9.1.29 or newer.
+            classpath("com.android.tools:r8:9.1.57")
+        }
+    }
+
     val flutterSdkPath =
         run {
             val properties = java.util.Properties()

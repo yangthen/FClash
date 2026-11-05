@@ -13,6 +13,11 @@ if [ ! -f "$PROJECT_DIR/pubspec.yaml" ] || [ ! -d "$PROJECT_DIR/core" ]; then
 fi
 
 BUILD_TOOL_PKG_DIR="$BASEDIR/build_tool"
+BUILD_TOOL_PKG_YAML_PATH="$BUILD_TOOL_PKG_DIR"
+# Native Windows Dart does not understand Git Bash's /c/... paths in YAML.
+if command -v cygpath >/dev/null 2>&1; then
+  BUILD_TOOL_PKG_YAML_PATH=$(cygpath -m "$BUILD_TOOL_PKG_DIR")
+fi
 BUILD_TOOL_TEMP_DIR="$PROJECT_DIR/build/setup_build_tool"
 
 mkdir -p "$BUILD_TOOL_TEMP_DIR"
@@ -34,7 +39,7 @@ environment:
 
 dependencies:
   build_tool:
-    path: "$BUILD_TOOL_PKG_DIR"
+    path: "$BUILD_TOOL_PKG_YAML_PATH"
 EOF
 
 mkdir -p "bin"

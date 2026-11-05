@@ -1,4 +1,4 @@
-package com.follow.clash
+package com.follow.fclash
 
 import android.annotation.SuppressLint
 import android.os.Build

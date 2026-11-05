@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'card.dart';
 import 'common.dart';
+import 'pull_to_test.dart';
 
 typedef ProxyGroupViewKeyMap =
     Map<String, GlobalObjectKey<_ProxyGroupViewState>>;
@@ -62,7 +63,7 @@ class ProxiesTabViewState extends ConsumerState<ProxiesTabView>
   Future<void> delayTestCurrentGroup() async {
     final currentGroupName = getCurrentGroupName();
     final currentState = _keyMap[currentGroupName]?.currentState;
-    await delayTest(currentState?.currentProxies ?? [], currentState?.testUrl);
+    await currentState?.testDelay();
   }
 
   Widget _buildMoreButton() {
@@ -280,9 +281,16 @@ class ProxyGroupView extends ConsumerStatefulWidget {
 
 class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
   late final ScrollController _controller;
+  Future<void>? _testing;
 
   List<Proxy> currentProxies = [];
   String? testUrl;
+
+  Future<void> testDelay() {
+    return _testing ??= delayTest(currentProxies, testUrl).whenComplete(() {
+      _testing = null;
+    });
+  }
 
   @override
   void initState() {
@@ -330,34 +338,39 @@ class _ProxyGroupViewState extends ConsumerState<ProxyGroupView> {
     final proxies = group.all;
     testUrl = group.testUrl;
     currentProxies = proxies;
-    return CommonScrollBar(
-      controller: _controller,
-      child: GridView.builder(
-        key: _getPageStorageKey(),
+    final isMobile = ref.watch(isMobileViewProvider);
+    return ProxyPullToTest(
+      onTest: testDelay,
+      child: CommonScrollBar(
         controller: _controller,
-        padding: const EdgeInsets.only(
-          top: 16,
-          left: 16,
-          right: 16,
-          bottom: 96,
+        child: GridView.builder(
+          key: _getPageStorageKey(),
+          controller: _controller,
+          physics: isMobile ? const AlwaysScrollableScrollPhysics() : null,
+          padding: const EdgeInsets.only(
+            top: 16,
+            left: 16,
+            right: 16,
+            bottom: 96,
+          ),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: widget.columns,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            mainAxisExtent: getItemHeight(widget.cardType),
+          ),
+          itemCount: currentProxies.length,
+          itemBuilder: (_, index) {
+            final proxy = currentProxies[index];
+            return ProxyCard(
+              testUrl: group.testUrl,
+              groupType: group.type,
+              type: widget.cardType,
+              proxy: proxy,
+              groupName: group.name,
+            );
+          },
         ),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: widget.columns,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          mainAxisExtent: getItemHeight(widget.cardType),
-        ),
-        itemCount: currentProxies.length,
-        itemBuilder: (_, index) {
-          final proxy = currentProxies[index];
-          return ProxyCard(
-            testUrl: group.testUrl,
-            groupType: group.type,
-            type: widget.cardType,
-            proxy: proxy,
-            groupName: group.name,
-          );
-        },
       ),
     );
   }

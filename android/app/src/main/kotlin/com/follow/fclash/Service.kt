@@ -1,4 +1,4 @@
-package com.follow.clash
+package com.follow.fclash
 
 import com.follow.clash.common.GlobalState
 import com.follow.clash.common.ServiceDelegate

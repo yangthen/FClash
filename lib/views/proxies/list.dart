@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
+import 'package:fl_clash/providers/app.dart';
 import 'package:fl_clash/providers/config.dart';
 import 'package:fl_clash/providers/state.dart';
 import 'package:fl_clash/widgets/widgets.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'card.dart';
 import 'common.dart';
+import 'pull_to_test.dart';
 
 typedef GroupNameProxiesMap = Map<String, List<Proxy>>;
 
@@ -302,72 +304,83 @@ class _ProxiesListViewState extends State<ProxiesListView> {
           cardType: state.proxyCardType,
         );
         final itemsOffset = _getItemHeightList(items, state.proxyCardType);
-        return CommonScrollBar(
-          controller: _controller,
-          thumbVisibility: true,
-          trackVisibility: true,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: ScrollConfiguration(
-                  behavior: HiddenBarScrollBehavior(),
-                  child: ListView.builder(
-                    key: proxiesListStoreKey,
-                    padding: const EdgeInsets.all(16),
-                    controller: _controller,
-                    itemExtentBuilder: (index, _) {
-                      return itemsOffset[index];
-                    },
-                    itemCount: items.length,
-                    itemBuilder: (_, index) {
-                      return items[index];
-                    },
+        final isMobile = ref.watch(isMobileViewProvider);
+        return ProxyPullToTest(
+          onTest: () async {
+            final index = _headerStateNotifier.value?.currentIndex ?? 0;
+            final group = state.groups[index.clamp(0, state.groups.length - 1)];
+            await delayTest(group.all, group.testUrl);
+          },
+          child: CommonScrollBar(
+            controller: _controller,
+            thumbVisibility: true,
+            trackVisibility: true,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: ScrollConfiguration(
+                    behavior: HiddenBarScrollBehavior(),
+                    child: ListView.builder(
+                      key: proxiesListStoreKey,
+                      padding: const EdgeInsets.all(16),
+                      controller: _controller,
+                      physics: isMobile
+                          ? const AlwaysScrollableScrollPhysics()
+                          : null,
+                      itemExtentBuilder: (index, _) {
+                        return itemsOffset[index];
+                      },
+                      itemCount: items.length,
+                      itemBuilder: (_, index) {
+                        return items[index];
+                      },
+                    ),
                   ),
                 ),
-              ),
-              LayoutBuilder(
-                builder: (_, container) {
-                  containerHeight = container.maxHeight;
-                  return ValueListenableBuilder(
-                    valueListenable: _headerStateNotifier,
-                    builder: (_, headerState, _) {
-                      if (headerState == null) {
-                        return const SizedBox();
-                      }
-                      final index =
-                          headerState.currentIndex > state.groups.length - 1
-                          ? 0
-                          : headerState.currentIndex;
-                      if (index < 0 || state.groups.isEmpty) {
-                        return Container();
-                      }
-                      return Stack(
-                        children: [
-                          Positioned(
-                            top: -headerState.offset,
-                            child: Container(
-                              width: container.maxWidth,
-                              color: context.colorScheme.surface,
-                              padding: const EdgeInsets.only(
-                                top: 16,
-                                left: 16,
-                                right: 16,
-                                bottom: 8,
-                              ),
-                              child: _buildHeader(
-                                ref,
-                                group: state.groups[index],
-                                currentUnfoldSet: state.currentUnfoldSet,
+                LayoutBuilder(
+                  builder: (_, container) {
+                    containerHeight = container.maxHeight;
+                    return ValueListenableBuilder(
+                      valueListenable: _headerStateNotifier,
+                      builder: (_, headerState, _) {
+                        if (headerState == null) {
+                          return const SizedBox();
+                        }
+                        final index =
+                            headerState.currentIndex > state.groups.length - 1
+                            ? 0
+                            : headerState.currentIndex;
+                        if (index < 0 || state.groups.isEmpty) {
+                          return Container();
+                        }
+                        return Stack(
+                          children: [
+                            Positioned(
+                              top: -headerState.offset,
+                              child: Container(
+                                width: container.maxWidth,
+                                color: context.colorScheme.surface,
+                                padding: const EdgeInsets.only(
+                                  top: 16,
+                                  left: 16,
+                                  right: 16,
+                                  bottom: 8,
+                                ),
+                                child: _buildHeader(
+                                  ref,
+                                  group: state.groups[index],
+                                  currentUnfoldSet: state.currentUnfoldSet,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },

@@ -68,6 +68,9 @@ docs/
 /macos/build/
 /env.json
 /core_sha256.json
+/android/key.properties
+/android/signing/
+/android/app/keystore.jks
 /core/*.exe
 /plugins/rust_api/.claude/
 devtools_options.yaml

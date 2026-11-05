@@ -3,7 +3,7 @@ package com.follow.clash.common
 import android.content.ComponentName
 
 object Components {
-    const val PACKAGE_NAME = "com.follow.clash"
+    const val PACKAGE_NAME = "com.follow.fclash"
 
     val MAIN_ACTIVITY =
         ComponentName(GlobalState.packageName, "${PACKAGE_NAME}.MainActivity")

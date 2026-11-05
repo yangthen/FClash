@@ -1,4 +1,4 @@
-package com.follow.clash
+package com.follow.fclash
 
 import android.app.Application
 import android.content.Context.MODE_PRIVATE
@@ -11,7 +11,7 @@ import android.os.Looper
 import android.widget.Toast
 import androidx.core.graphics.drawable.toBitmap
 import com.follow.clash.common.GlobalState
-import com.follow.clash.models.SharedState
+import com.follow.fclash.models.SharedState
 import com.google.gson.Gson
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.plugins.FlutterPlugin

@@ -1,11 +1,11 @@
-package com.follow.clash.plugins
+package com.follow.fclash.plugins
 
-import com.follow.clash.RunState
-import com.follow.clash.Service
-import com.follow.clash.State
+import com.follow.fclash.RunState
+import com.follow.fclash.Service
+import com.follow.fclash.State
 import com.follow.clash.common.Components
-import com.follow.clash.invokeMethodOnMainThread
-import com.follow.clash.models.SharedState
+import com.follow.fclash.invokeMethodOnMainThread
+import com.follow.fclash.models.SharedState
 import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall

@@ -15,16 +15,21 @@ val localProperties = Properties().apply {
     }
 }
 
-val mStoreFile: File = file("keystore.jks")
-val mStorePassword: String? = localProperties.getProperty("storePassword")
-val mKeyAlias: String? = localProperties.getProperty("keyAlias")
-val mKeyPassword: String? = localProperties.getProperty("keyPassword")
+val signingProperties = Properties().apply {
+    putAll(localProperties)
+    val signingFile = rootProject.file("key.properties")
+    if (signingFile.exists()) signingFile.inputStream().use { load(it) }
+}
+val mStoreFile: File = file(signingProperties.getProperty("storeFile", "keystore.jks"))
+val mStorePassword: String? = signingProperties.getProperty("storePassword")
+val mKeyAlias: String? = signingProperties.getProperty("keyAlias")
+val mKeyPassword: String? = signingProperties.getProperty("keyPassword")
 val isRelease =
     mStoreFile.exists() && mStorePassword != null && mKeyAlias != null && mKeyPassword != null
 
 
 android {
-    namespace = "com.follow.clash"
+    namespace = "com.follow.fclash"
     compileSdk = libs.versions.compileSdk.get().toInt()
     ndkVersion = libs.versions.ndkVersion.get()
 
@@ -36,7 +41,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.follow.clash"
+        applicationId = "com.follow.fclash"
         minSdk = flutter.minSdkVersion
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = flutter.versionCode

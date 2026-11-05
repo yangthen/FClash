@@ -1,7 +1,7 @@
-package com.follow.clash.plugins
+package com.follow.fclash.plugins
 
 import com.follow.clash.common.Components
-import com.follow.clash.invokeMethodOnMainThread
+import com.follow.fclash.invokeMethodOnMainThread
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel

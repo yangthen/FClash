@@ -1,4 +1,4 @@
-package com.follow.clash
+package com.follow.fclash
 
 import android.app.Activity
 import android.os.Bundle

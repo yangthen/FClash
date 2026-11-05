@@ -40,7 +40,7 @@ provider tests, UI work, and core/platform changes.
 
 ## Release Policy
 
-- The next release for this fork is `0.8.95`. Finish the agreed optimization batch and its validation before creating the annotated release tag.
+- The current release target for this fork is `0.8.96`. Complete its changes and validation before creating the annotated release tag.
 - Release labels and tags use two digits for the final component. After `0.8.99`, continue with `0.9.01`; after `0.9.99`, use `0.10.01`. Carry at 100 and restart the final component at 01.
 - Dart pubspec versions must remain valid SemVer: release label `0.9.01` maps to pubspec `0.9.1`. Keep the label in release notes and the tag; never put an invalid leading-zero numeric component in pubspec.yaml.
 - Every release must document **Features** and **Bug Fixes**, plus validation results and any remaining limitations. Do not claim measured performance improvements without comparable measurements.
