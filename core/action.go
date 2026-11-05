@@ -48,6 +48,9 @@ func handleAction(action *Action, result ActionResult) {
 		}
 	}()
 	switch action.Method {
+	case "getProxyCountry":
+		handleGetProxyCountry(action.Data.(string), result)
+		return
 	case "requestEvents":
 		requestEventsEnabled.Store(action.Data.(bool))
 		result.success(true)

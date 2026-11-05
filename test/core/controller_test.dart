@@ -117,6 +117,22 @@ void main() {
   });
 
   group('proxy methods', () {
+    test('exit country uses named Core RPC and validates the result', () async {
+      String? result = 'jp';
+      when(
+        () => mock.invoke<String>(
+          method: ActionMethod.getProxyCountry,
+          data: 'node',
+          timeout: const Duration(seconds: 12),
+        ),
+      ).thenAnswer((_) async => result);
+      expect(await controller.getProxyCountry('node'), 'JP');
+      for (final invalid in [null, '', '12', 'UNKNOWN']) {
+        result = invalid;
+        expect(await controller.getProxyCountry('node'), isNull);
+      }
+    });
+
     test('changeProxy delegates to interface', () async {
       const params = ChangeProxyParams(groupName: 'G1', proxyName: 'P1');
       when(() => mock.changeProxy(params)).thenAnswer((_) async => 'ok');

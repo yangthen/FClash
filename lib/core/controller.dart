@@ -206,6 +206,18 @@ class CoreController {
     return Delay.fromJson(json.decode(data));
   }
 
+  Future<String?> getProxyCountry(String proxyName) async {
+    final code = await _interface.invoke<String>(
+      method: ActionMethod.getProxyCountry,
+      data: proxyName,
+      timeout: const Duration(seconds: 12),
+    );
+    final normalized = code?.toUpperCase();
+    return normalized != null && RegExp(r'^[A-Z]{2}$').hasMatch(normalized)
+        ? normalized
+        : null;
+  }
+
   Future<Map<String, dynamic>> getConfig(int id) async {
     final profilePath = await appPath.getProfilePath(id.toString());
     final res = await _interface.getConfig(profilePath);

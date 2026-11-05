@@ -4,6 +4,7 @@ import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/views/proxies/common.dart';
+import 'package:fl_clash/views/proxies/country_flag.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -152,7 +153,12 @@ class ProxyCard extends StatelessWidget {
                     child: _ProxyDesc(proxy: proxy),
                   ),
                   const SizedBox(height: 6),
-                  delayText,
+                  Row(
+                    children: [
+                      Expanded(child: delayText),
+                      ProxyCountryFlag(proxyName: proxy.name),
+                    ],
+                  ),
                 ] else
                   SizedBox(
                     height: measure.bodySmallHeight,
@@ -177,6 +183,7 @@ class ProxyCard extends StatelessWidget {
                           ),
                         ),
                         delayText,
+                        ProxyCountryFlag(proxyName: proxy.name),
                       ],
                     ),
                   ),

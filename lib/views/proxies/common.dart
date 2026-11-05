@@ -68,19 +68,26 @@ Future<void> proxyDelayTest(Proxy proxy, [String? testUrl]) async {
   ref
       .read(proxiesActionProvider.notifier)
       .setDelay(Delay(url: currentTestUrl, name: state.proxyName, value: 0));
+  final countryTest = ref
+      .read(proxyCountriesProvider.notifier)
+      .refresh(
+        ref.read(currentProfileIdProvider),
+        proxy.name,
+        lookupName: state.proxyName,
+      );
   ref
       .read(proxiesActionProvider.notifier)
       .setDelay(await coreController.getDelay(currentTestUrl, state.proxyName));
+  await countryTest;
 }
 
 Future<void> delayTest(List<Proxy> proxies, [String? testUrl]) async {
-  final delayProxies = proxies.map<Future>((proxy) async {
-    await proxyDelayTest(proxy, testUrl);
-  }).toList();
-
-  final batchesDelayProxies = delayProxies.batch(100);
-  for (final batchDelayProxies in batchesDelayProxies) {
-    await Future.wait(batchDelayProxies);
+  final ref = globalState.container;
+  final profileId = ref.read(currentProfileIdProvider);
+  // Create futures inside each batch so exit lookups are actually bounded.
+  for (final batch in proxies.batch(10)) {
+    if (ref.read(currentProfileIdProvider) != profileId) break;
+    await Future.wait(batch.map((proxy) => proxyDelayTest(proxy, testUrl)));
   }
   globalState.container.read(sortNumProvider.notifier).add();
 }

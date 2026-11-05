@@ -99,6 +99,24 @@ class Preferences {
     final sharedPreferencesIns = await sharedPreferencesCompleter.future;
     await sharedPreferencesIns?.clear();
   }
+
+  Future<Map<String, String>> getProxyCountries() async {
+    if (safeMode) return {};
+    try {
+      final preferences = await sharedPreferencesCompleter.future;
+      final raw = preferences?.getString('proxyCountries');
+      if (raw == null) return {};
+      return Map<String, String>.from(jsonDecode(raw) as Map);
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveProxyCountries(Map<String, String> countries) async {
+    if (safeMode) return;
+    final preferences = await sharedPreferencesCompleter.future;
+    await preferences?.setString('proxyCountries', jsonEncode(countries));
+  }
 }
 
 final preferences = Preferences();
