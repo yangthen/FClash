@@ -13,6 +13,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
+@androidx.annotation.RequiresApi(24)
 class TileService : TileService() {
     private var scope: CoroutineScope? = null
     private fun updateTile(runState: RunState) {

@@ -2,9 +2,11 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    buildToolsVersion = "36.1.0"
     namespace = "com.follow.clash.service"
     compileSdk = 36
 
@@ -39,6 +41,7 @@ kotlin {
 
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation(project(":core"))
     implementation(project(":common"))
     implementation(libs.gson)

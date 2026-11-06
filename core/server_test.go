@@ -28,3 +28,9 @@ func TestTruncatedFrameFails(t *testing.T) {
 		t.Fatal("expected truncated frame error")
 	}
 }
+
+func TestOversizedFrameFailsBeforeAllocating(t *testing.T) {
+	if _, err := readFrame(bytes.NewReader([]byte{0xff, 0xff, 0xff, 0x7f})); err == nil {
+		t.Fatal("expected oversized frame error")
+	}
+}

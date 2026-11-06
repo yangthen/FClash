@@ -2,15 +2,18 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    buildToolsVersion = "36.1.0"
     namespace = "com.follow.clash.core"
     compileSdk = libs.versions.compileSdk.get().toInt()
     ndkVersion = libs.versions.ndkVersion.get()
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
+        ndk { abiFilters += (providers.gradleProperty("fclash.abis").orNull?.split(',') ?: listOf("arm64-v8a", "armeabi-v7a", "x86_64")) }
     }
 
 

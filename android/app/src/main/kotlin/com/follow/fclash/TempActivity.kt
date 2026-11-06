@@ -16,7 +16,7 @@ class TempActivity : Activity(),
         when (intent.action) {
             QuickAction.START.action -> {
                 launch {
-                    State.handleStartServiceAction()
+                    startOrRequestPermission()
                 }
             }
 
@@ -28,10 +28,15 @@ class TempActivity : Activity(),
 
             QuickAction.TOGGLE.action -> {
                 launch {
-                    State.handleToggleAction()
+                    if (Service.getRunTime() > 0) State.handleStopServiceAction() else startOrRequestPermission()
                 }
             }
         }
         finish()
+    }
+    private suspend fun startOrRequestPermission() {
+        if (BuildConfig.SAFE_MODE) return
+        if (android.net.VpnService.prepare(applicationContext) != null) startActivity(android.content.Intent(this, MainActivity::class.java).putExtra("start", true))
+        else State.handleStartServiceAction()
     }
 }

@@ -16,10 +16,6 @@ subprojects {
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 
-subprojects {
-    project.evaluationDependsOn(":app")
-}
-
 gradle.projectsEvaluated {
     allprojects {
         tasks.withType<JavaCompile>().configureEach {

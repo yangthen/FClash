@@ -30,9 +30,5 @@ if (EXISTS ${LIB_CLASH_PATH} AND EXISTS ${LIB_CLASH_HEADER_PATH} AND EXISTS ${BR
     target_link_libraries(${CMAKE_PROJECT_NAME}
             clash)
 else ()
-    message("Not found complete libclash output for ABI ${ANDROID_ABI}; building core without LIBCLASH")
-    add_library(${CMAKE_PROJECT_NAME} SHARED
-            jni_helper.cpp
-            core.cpp)
-    target_link_libraries(${CMAKE_PROJECT_NAME})
+    message(FATAL_ERROR "Missing Go Core/header output for ${ANDROID_ABI}. Run python scripts/build_android.py before packaging.")
 endif ()

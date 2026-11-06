@@ -36,6 +36,9 @@ class VpnService : SystemVpnService(), IBaseService,
         install(NetworkObserveModule(self))
         install(NotificationModule(self))
         install(SuspendModule(self))
+        install(com.follow.clash.service.modules.OnDemandModule(self) { paused ->
+            if (paused) Core.stopTun() else State.options?.let { handleStart(it) }
+        })
     }
 
     override fun onCreate() {
@@ -204,7 +207,7 @@ class VpnService : SystemVpnService(), IBaseService,
                     }
                 }
             }
-            setSession("FlClash")
+            setSession("FClash")
             setBlocking(false)
             if (Build.VERSION.SDK_INT >= 29) {
                 setMetered(false)
@@ -235,12 +238,13 @@ class VpnService : SystemVpnService(), IBaseService,
 
     override fun start() {
         try {
-            loader.load()
             State.options?.let {
                 handleStart(it)
             }
-        } catch (_: Exception) {
+            loader.load()
+        } catch (error: Exception) {
             stop()
+            throw error
         }
     }
 

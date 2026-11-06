@@ -4,12 +4,12 @@ import android.os.Parcel
 import android.os.Parcelable
 
 data class NotificationParams(
-    val title: String = "FlClash",
+    val title: String = "FClash",
     val stopText: String = "STOP",
     val onlyStatisticsProxy: Boolean = false,
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
-        title = parcel.readString() ?: "FlClash",
+        title = parcel.readString() ?: "FClash",
         stopText = parcel.readString() ?: "STOP",
         onlyStatisticsProxy = parcel.readByte() != 0.toByte(),
     )

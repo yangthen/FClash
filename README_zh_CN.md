@@ -1,141 +1,28 @@
-> **FClash** — 本仓库基于 FlClash v0.8.94 开发。产品名称为 FClash，版本规则见 AGENTS.md，迭代内容见 [0.8.95 发布说明](releases/0.8.95.md)。
+# FClash
 
-<div>
+基于 Mihomo 的 Windows 和 Android 原生代理客户端，保留原有 Material 风格与操作路径。
 
-[**English**](README.md)
+- Windows：C# / .NET 10 / WinUI 3，命名管道连接独立 Go Core。
+- Android：Kotlin / Jetpack Compose / Material 3，Binder/AIDL 连接独立 VPN 服务，JNI 调用 Go Core。
+- 仅维护这两个平台；构建不需要 Flutter、Dart 或 Rust 工具链。
+- Android 包名 `com.follow.fclash`，覆盖更新须使用已有 FClash 发布签名。
 
-</div>
+## 构建
 
-## FlClash
+先初始化 `core/Clash.Meta` 子模块。需要 Go 1.26.4；Windows 还需要 .NET 10、Windows SDK 26100 和 WinUI 构建工具；Android 需要 Python 3、JDK 21、SDK 36、Build-Tools 36.1.0、NDK 28.2.13676358、CMake 3.22.1。
 
-[![Downloads](https://img.shields.io/github/downloads/chen08209/FlClash/total?style=flat-square&logo=github)](https://github.com/chen08209/FlClash/releases/)[![Last Version](https://img.shields.io/github/release/chen08209/FlClash/all.svg?style=flat-square)](https://github.com/chen08209/FlClash/releases/)[![License](https://img.shields.io/github/license/chen08209/FlClash?style=flat-square)](LICENSE)
-
-[![Channel](https://img.shields.io/badge/Telegram-Channel-blue?style=flat-square&logo=telegram)](https://t.me/FlClash)
-
-基于ClashMeta的多平台代理客户端，简单易用，开源无广告。
-
-on Desktop:
-<p style="text-align: center;">
-    <img alt="desktop" src="snapshots/desktop.gif">
-</p>
-
-on Mobile:
-<p style="text-align: center;">
-    <img alt="mobile" src="snapshots/mobile.gif">
-</p>
-
-## Features
-
-✈️ 多平台: Android, Windows, macOS and Linux
-
-💻 自适应多个屏幕尺寸,多种颜色主题可供选择
-
-💡 基本 Material You 设计, 类[Surfboard](https://github.com/getsurfboard/surfboard)用户界面
-
-☁️ 支持通过WebDAV同步数据
-
-✨ 支持一键导入订阅, 深色模式
-
-## Use
-
-### Linux
-
-⚠️ 使用前请确保安装以下依赖
-
-   ```bash
-    sudo apt-get install libayatana-appindicator3-dev
-    sudo apt-get install libkeybinder-3.0-dev
-   ```
-
-### Android
-
-支持下列操作
-
-   ```bash
-    com.follow.clash.action.START
-    
-    com.follow.clash.action.STOP
-    
-    com.follow.clash.action.TOGGLE
-   ```
-
-## Download
-
-<a href="https://chen08209.github.io/FlClash-fdroid-repo/repo?fingerprint=789D6D32668712EF7672F9E58DEEB15FBD6DCEEC5AE7A4371EA72F2AAE8A12FD"><img alt="Get it on F-Droid" src="snapshots/get-it-on-fdroid.svg" width="200px"/></a> <a href="https://github.com/chen08209/FlClash/releases"><img alt="Get it on GitHub" src="snapshots/get-it-on-github.svg" width="200px"/></a>
-
-### Homebrew
-
-```bash
-brew tap chen08209/tap
-brew install --cask flclash
+```powershell
+dotnet run --project windows-native/FClash.Tests -c Release
+./scripts/build_windows_native.ps1 -Architecture x64 -Label 0.8.96-native-preview -Targets zip
+python scripts/build_android.py
 ```
 
-## Build
+Android 签名继续从本地忽略的 `android/key.properties` 读取；签名密钥、密码禁止提交。安全模式构建：`python scripts/build_android.py --debug --safe-mode --abis arm64-v8a`。Gradle 可独立使用，例如 `android/gradlew.bat -p android :domain:test`。
 
-1. 更新 submodules
-   ```bash
-   git submodule update --init --recursive
-   ```
+版本来自 `version.properties`，标签末段保留两位，满 100 进位：`0.8.99 → 0.9.01`。`semver` 使用合法数值版本，例如 `0.9.1`；Android `code` 必须单调递增。
 
-2. 安装 `Flutter` 以及 `Golang` 环境
+## 升级与验证
 
-3. 构建应用
+Android 原生版从同一包名的旧版只读导入 SQLite、配置、脚本、选择、DNS/规则顺序和国旗缓存，原数据库保留；新数据存入应用内部 `files/native`。支持原生 ZIP 备份与旧版 ZIP 数据导入。Windows 使用独立原生目录，详见 [Windows 说明](windows-native/README.md)。
 
-    - android
-
-        1. 安装  `Android SDK` ,  `Android NDK`
-
-        2. 设置 `ANDROID_NDK` 环境变量
-
-        3. 运行构建脚本
-
-           ```bash
-           dart setup.dart android
-           ```
-
-    - windows
-
-        1. 你需要一个windows客户端
-
-        2. 安装 `GCC`，`Inno Setup`
-
-        3. 运行构建脚本
-
-           ```bash
-           dart setup.dart windows
-           ```
-
-    - linux
-
-        1. 你需要一个linux客户端
-
-        2. 依赖会由 setup 脚本自动安装，也可以手动安装：
-           ```bash
-           sudo apt-get install -y libayatana-appindicator3-dev libkeybinder-3.0-dev
-           ```
-
-        3. 运行构建脚本
-
-           ```bash
-           dart setup.dart linux
-           ```
-
-    - macOS
-
-        1. 你需要一个macOS客户端
-
-        2. 运行构建脚本
-
-           ```bash
-           dart setup.dart macos
-           ```
-
-## Star
-
-支持开发者的最简单方式是点击页面顶部的星标（⭐）。
-
-<p style="text-align: center;">
-    <a href="https://api.star-history.com/svg?repos=chen08209/FlClash&Date">
-        <img alt="start" width=50% src="https://api.star-history.com/svg?repos=chen08209/FlClash&Date"/>
-    </a>
-</p>
+开发机仅运行隔离安全模式，禁止更改开发机代理、DNS、TUN 或 helper 服务。Android 安全模式使用 `.dev` 包名和独立数据目录，禁止启动 Core/VPN。正式 VPN、权限授权、系统回收后的恢复和内存收益必须在专用测试设备上验证。不得把框架迁移等同于已测得的内存下降。

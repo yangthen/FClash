@@ -1,20 +1,15 @@
 repos:
   - repo: local
     hooks:
-      - id: dart-format
-        name: dart format
-        entry: dart format
+      - id: go-format
+        name: gofmt
+        entry: gofmt -w
         language: system
-        files: \.dart$
-      - id: flutter-analyze
-        name: flutter analyze
-        entry: flutter analyze --no-fatal-infos
-        language: system
-        pass_filenames: false
-        files: \.dart$
-      - id: flutter-test
-        name: flutter test
-        entry: flutter test --reporter expanded
+        files: ^core/.*\.go$
+        exclude: ^core/Clash.Meta/
+      - id: native-domain-tests
+        name: native domain regressions
+        entry: dotnet run --project windows-native/FClash.Tests -c Release
         language: system
         pass_filenames: false
-        files: \.dart$
+        files: ^windows-native/FClash.Domain/.*\.cs$

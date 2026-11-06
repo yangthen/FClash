@@ -5,6 +5,7 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -47,6 +48,9 @@ func readFrame(r io.Reader) ([]byte, error) {
 		return nil, err
 	}
 	length := binary.LittleEndian.Uint32(lenBuf)
+	if length > 32*1024*1024 {
+		return nil, fmt.Errorf("IPC frame exceeds 32 MiB")
+	}
 	data := make([]byte, length)
 	if _, err := io.ReadFull(r, data); err != nil {
 		return nil, err
@@ -66,17 +70,24 @@ func send(data []byte) {
 }
 
 func startServer(arg string) {
-	for {
-		serveConnection(arg)
-		time.Sleep(500 * time.Millisecond)
+	// A desktop Core belongs to one GUI session. Never reconnect to a later GUI
+	// after its owner exits: listeners and TUN must end with that session.
+	home := serveConnection(arg)
+	// Restore networking before shutdown, including a GUI crash. Bound shutdown
+	// so a stuck provider cannot turn this into an orphaned headless session.
+	deadline := time.AfterFunc(5*time.Second, func() { os.Exit(0) })
+	defer deadline.Stop()
+	if home != "" {
+		restoreOwnerProxy(home)
 	}
+	handleShutdown()
 }
 
-func serveConnection(arg string) {
+func serveConnection(arg string) (home string) {
 	var err error
 	connection, err := dial(arg)
 	if err != nil {
-		return
+		return ""
 	}
 	connMu.Lock()
 	conn = connection
@@ -97,7 +108,7 @@ func serveConnection(arg string) {
 			if err != io.EOF {
 				logError("server read error: %v", err)
 			}
-			return
+			return home
 		}
 		var action = &Action{}
 
@@ -106,6 +117,14 @@ func serveConnection(arg string) {
 		if err != nil {
 			logError("server unmarshal error: %v (data: %q)", err, data)
 			continue
+		}
+		if action.Method == initClashMethod {
+			if data, ok := action.Data.(string); ok {
+				var params InitParams
+				if json.Unmarshal([]byte(data), &params) == nil {
+					home = params.HomeDir
+				}
+			}
 		}
 
 		result := ActionResult{

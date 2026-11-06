@@ -62,12 +62,15 @@ class RemoteService : Service(),
                     intent = nextIntent
                     delegate?.bind()
                 }
-                delegate?.useService { service ->
-                    service.start()
+                val started = runCatching {
+                    val active = checkNotNull(delegate) { "Missing service delegate" }
+                    active.useService { service -> service.start() }.getOrThrow()
                 }
-                State.runTime = when (runTime != 0L) {
-                    true -> runTime
-                    false -> System.currentTimeMillis()
+                State.runTime = if (started.isSuccess) {
+                    if (runTime != 0L) runTime else System.currentTimeMillis()
+                } else {
+                    GlobalState.log("Service start failed: ${started.exceptionOrNull()}")
+                    0
                 }
                 result.onResult(State.runTime)
             }

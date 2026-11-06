@@ -61,7 +61,7 @@ func acceptSession(t *testing.T, listener net.Listener) net.Conn {
 	return connection
 }
 
-func TestDetachedCoreReconnectsWithRuntimeIntact(t *testing.T) {
+func TestDesktopCoreStopsWhenOwnerDisconnects(t *testing.T) {
 	home := t.TempDir()
 	pipe := fmt.Sprintf(`\\.\pipe\FClash-test-%d-%d`, os.Getpid(), time.Now().UnixNano())
 	listener, err := winio.ListenPipe(pipe, nil)
@@ -74,7 +74,9 @@ func TestDetachedCoreReconnectsWithRuntimeIntact(t *testing.T) {
 	if err = command.Start(); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = command.Process.Kill(); _ = command.Wait() })
+	done := make(chan error, 1)
+	go func() { done <- command.Wait() }()
+	t.Cleanup(func() { _ = command.Process.Kill() })
 	connection := acceptSession(t, listener)
 	configPath := filepath.Join(home, "config.yaml")
 	safeConfig := "mixed-port: 0\nport: 0\nsocks-port: 0\ndns:\n  enable: false\ntun:\n  enable: false\nrules:\n  - MATCH,DIRECT\n"
@@ -97,21 +99,12 @@ func TestDetachedCoreReconnectsWithRuntimeIntact(t *testing.T) {
 	}
 	_ = connection.Close()
 	_ = listener.Close()
-	listener, err = winio.ListenPipe(pipe, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	connection = acceptSession(t, listener)
-	defer connection.Close()
-	after := sessionCall(t, connection, "desktopRuntime", nil)["data"].(map[string]any)
-	if after["running"] != true || after["startedAt"] != before["startedAt"] || after["configDigest"] != before["configDigest"] {
-		t.Fatalf("runtime changed: before=%v after=%v", before, after)
-	}
-	if result := sessionCall(t, connection, "stopListener", nil); result["data"] != true {
-		t.Fatalf("stop: %v", result)
-	}
-	stopped := sessionCall(t, connection, "desktopRuntime", nil)["data"].(map[string]any)
-	if stopped["running"] != false {
-		t.Fatal("core did not stop")
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("owner disconnect did not stop cleanly: %v", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("Core outlived its GUI session")
 	}
 }

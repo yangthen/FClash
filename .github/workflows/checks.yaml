@@ -1,42 +1,30 @@
-name: checks
-
-on:
-  pull_request:
-  push:
-    branches: ['**']
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
+name: Native checks
+on: [push, pull_request, workflow_dispatch]
 jobs:
-  flutter:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with: {submodules: recursive}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '10.0.x'}
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.26.4', cache-dependency-path: core/go.sum}
+      - run: dotnet run --project windows-native/FClash.Tests -c Release
+      - run: dotnet build windows-native/FClash.WinUI -c Release -p:Platform=x64
+      - run: go test -tags with_gvisor ./...
+        working-directory: core
+        env: {CGO_ENABLED: '0'}
+  android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: '3.44.5'
-          cache: true
-      - run: flutter pub get
-      - run: flutter analyze --no-fatal-infos
-      - run: flutter test --reporter expanded
-  core:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    env:
-      CGO_ENABLED: '0'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+        with: {submodules: recursive}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
       - uses: actions/setup-go@v5
-        with:
-          go-version: '1.26.4'
-          cache-dependency-path: core/go.sum
-      - run: go test -C core -tags with_gvisor ./...
+        with: {go-version: '1.26.4', cache-dependency-path: core/go.sum}
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.1.0' 'ndk;28.2.13676358' 'cmake;3.22.1'
+      - run: chmod +x android/gradlew
+      - run: python3 scripts/build_android.py --debug --safe-mode --abis arm64-v8a

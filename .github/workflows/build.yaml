@@ -1,184 +1,56 @@
-name: build
-
+name: Native packages
 on:
+  workflow_dispatch:
   push:
-    tags:
-      - 'v*'
-      - '[0-9]*'
-env:
-  IS_STABLE: ${{ !contains(github.ref, '-') }}
-  FLUTTER_VERSION: '3.44.5'
-
+    tags: ['[0-9]*', 'v[0-9]*']
 jobs:
-  test:
-    name: Test
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with: {submodules: recursive}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: '10.0.x'}
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.26.4', cache-dependency-path: core/go.sum}
+      - run: dotnet run --project windows-native/FClash.Tests -c Release
+      - shell: pwsh
+        run: |
+          $label = (ConvertFrom-StringData (Get-Content version.properties -Raw)).label + '-native-preview'
+          ./scripts/build_windows_native.ps1 -Architecture x64 -Label $label -Targets 'exe,zip'
+      - uses: actions/upload-artifact@v4
+        with: {name: FClash-windows-native, path: dist/windows-native/}
+  android:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos
-
-      - name: Run tests
-        run: flutter test --reporter expanded
-
-  build:
-    needs: [ test ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - platform: android
-            os: ubuntu-latest
-          - platform: windows
-            os: Windows-2022
-            arch: amd64
-          - platform: linux
-            os: ubuntu-22.04
-            arch: amd64
-          - platform: macos
-            os: macos-15-intel
-            arch: amd64
-          - platform: macos
-            os: macos-latest
-            arch: arm64
-          - platform: windows
-            os: windows-11-arm
-            arch: arm64
-          - platform: linux
-            os: ubuntu-24.04-arm
-            arch: arm64
-
-    steps:
-      - name: Setup rust
-        if: startsWith(matrix.os, 'windows-11-arm')
-        shell: pwsh
-        run: |
-          Invoke-WebRequest -Uri "https://win.rustup.rs/aarch64" -OutFile rustup-init.exe
-          .\rustup-init.exe -y --default-toolchain stable
-          $cargoPath = "$env:USERPROFILE\.cargo\bin"
-          Add-Content $env:GITHUB_PATH $cargoPath
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup Android Signing
-        if: startsWith(matrix.platform,'android')
+      - uses: actions/checkout@v4
+        with: {submodules: recursive}
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.26.4', cache-dependency-path: core/go.sum}
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.1.0' 'ndk;28.2.13676358' 'cmake;3.22.1'
+      - run: chmod +x android/gradlew
+      - name: Configure existing FClash release signing
         env:
           KEYSTORE: ${{ secrets.KEYSTORE }}
-          SERVICE_JSON: ${{ secrets.SERVICE_JSON }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [ -z "$KEYSTORE" ] || [ -z "$KEY_ALIAS" ] || [ -z "$STORE_PASSWORD" ] || [ -z "$KEY_PASSWORD" ]; then
-            echo "::error::Configure KEYSTORE, KEY_ALIAS, STORE_PASSWORD and KEY_PASSWORD using the FClash release signing key. Refusing to publish a .dev build."
-            exit 1
-          fi
+          test -n "$KEYSTORE" && test -n "$KEY_ALIAS" && test -n "$STORE_PASSWORD" && test -n "$KEY_PASSWORD"
           printf '%s' "$KEYSTORE" | base64 --decode > android/app/keystore.jks
-          keytool -exportcert -keystore android/app/keystore.jks -alias "$KEY_ALIAS" -storepass:env STORE_PASSWORD -file "$RUNNER_TEMP/fclash-release-cert.der"
-          actual_cert=$(sha256sum "$RUNNER_TEMP/fclash-release-cert.der" | cut -d ' ' -f1)
-          if [ "$actual_cert" != "3031c1bfd3f384b9858284b5c5b7ab61fc68763e552558878b5df2e734af63a4" ]; then
-            echo "::error::Android signing certificate does not match the FClash release key."
-            exit 1
-          fi
-          if [ -n "$SERVICE_JSON" ]; then
-            printf '%s' "$SERVICE_JSON" | base64 --decode > android/app/google-services.json
-          fi
-          {
-            printf 'keyAlias=%s\n' "$KEY_ALIAS"
-            printf 'storePassword=%s\n' "$STORE_PASSWORD"
-            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
-          } >> android/local.properties
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.26.4'
-          cache-dependency-path: |
-            core/go.sum
-
-      - name: Enable git long paths (Windows)
-        if: startsWith(matrix.os, 'windows')
-        run: git config --global core.longpaths true
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-
-      - name: Setup Xcode
-        if: startsWith(matrix.platform,'macos')
-        run: |
-          sudo xcode-select -s /Applications/Xcode_26.3.app || sudo xcode-select -s /Applications/Xcode_26.2.app
-          xcodebuild -version
-
-      - name: Setup NDK
-        if: startsWith(matrix.platform,'android')
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r28c
-          add-to-path: true
-          link-to-sdk: true
-
-      - name: Get Flutter Dependency
-        run: |
-          flutter --version
-          flutter pub get
-
-      - name: Core regression tests
-        if: matrix.platform != 'android'
-        env:
-          CGO_ENABLED: '0'
-        run: go test -C core -tags with_gvisor ./...
-
-      - name: Setup
-        run: dart setup.dart ${{ matrix.platform }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} -v
-
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifact-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) }}
-          path: ./dist
-          overwrite: true
-
-  release:
-    permissions:
-      contents: write
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: artifact-*
-          path: dist
-          merge-multiple: true
-      - name: Prepare release notes
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: python scripts/release_notes.py "$RELEASE_TAG" release.md
-      - name: Checksums
-        run: cd dist && sha256sum ./* > SHA256SUMS
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*
-          body_path: release.md
+          keytool -exportcert -keystore android/app/keystore.jks -alias "$KEY_ALIAS" -storepass:env STORE_PASSWORD -file "$RUNNER_TEMP/fclash-cert.der"
+          test "$(sha256sum "$RUNNER_TEMP/fclash-cert.der" | cut -d ' ' -f1)" = '3031c1bfd3f384b9858284b5c5b7ab61fc68763e552558878b5df2e734af63a4'
+          python3 - <<'PYCODE'
+          import os, pathlib
+          def escaped(value):
+              return value.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
+          values = {'storeFile':'keystore.jks', 'storePassword':os.environ['STORE_PASSWORD'], 'keyAlias':os.environ['KEY_ALIAS'], 'keyPassword':os.environ['KEY_PASSWORD']}
+          pathlib.Path('android/key.properties').write_text('\n'.join(k+'='+escaped(v) for k,v in values.items()))
+          PYCODE
+      - run: python3 scripts/build_android.py
+      - uses: actions/upload-artifact@v4
+        with: {name: FClash-android-native, path: dist/android-native/}

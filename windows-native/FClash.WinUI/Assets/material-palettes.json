@@ -1,0 +1,170 @@
+{
+  "ff795548": {
+    "dark": {
+      "CanvasBrush": "#ff161311",
+      "RailBrush": "#ff231f1d",
+      "CardBrush": "#ff1e1b1a",
+      "CardStroke": "#ff383432",
+      "MutedBrush": "#ffd4c3bd",
+      "PrimaryBrush": "#ffebbcac",
+      "SelectionBrush": "#ff57453f",
+      "onPrimary": "#ff46291e",
+      "onSurface": "#ffe9e1de"
+    },
+    "light": {
+      "CanvasBrush": "#fffff8f6",
+      "RailBrush": "#fff5ece9",
+      "CardBrush": "#fffbf2ef",
+      "CardStroke": "#ffe9e1de",
+      "MutedBrush": "#ff504440",
+      "PrimaryBrush": "#ff5f3e32",
+      "SelectionBrush": "#fff4dad2",
+      "onPrimary": "#ffffffff",
+      "onSurface": "#ff1e1b1a"
+    }
+  },
+  "ff03a9f4": {
+    "dark": {
+      "CanvasBrush": "#ff0f1418",
+      "RailBrush": "#ff1b2025",
+      "CardBrush": "#ff171c21",
+      "CardStroke": "#ff30353a",
+      "MutedBrush": "#ffbec8d2",
+      "PrimaryBrush": "#ff8dcdff",
+      "SelectionBrush": "#ff214a66",
+      "onPrimary": "#ff00344f",
+      "onSurface": "#ffdee3e9"
+    },
+    "light": {
+      "CanvasBrush": "#fff6f9ff",
+      "RailBrush": "#ffeaeef5",
+      "CardBrush": "#fff0f4fa",
+      "CardStroke": "#ffdee3e9",
+      "MutedBrush": "#ff3e4851",
+      "PrimaryBrush": "#ff006493",
+      "SelectionBrush": "#ffb4dcfd",
+      "onPrimary": "#ffffffff",
+      "onSurface": "#ff171c21"
+    }
+  },
+  "ffffff00": {
+    "dark": {
+      "CanvasBrush": "#ff141408",
+      "RailBrush": "#ff202013",
+      "CardBrush": "#ff1c1c0f",
+      "CardStroke": "#ff363527",
+      "MutedBrush": "#ffcac8aa",
+      "PrimaryBrush": "#ffffffff",
+      "SelectionBrush": "#ff676700",
+      "onPrimary": "#ff323200",
+      "onSurface": "#ffe6e3ce"
+    },
+    "light": {
+      "CanvasBrush": "#fffdfae4",
+      "RailBrush": "#fff2efd9",
+      "CardBrush": "#fff7f4df",
+      "CardStroke": "#ffe6e3ce",
+      "MutedBrush": "#ff484831",
+      "PrimaryBrush": "#ff626200",
+      "SelectionBrush": "#ffe6e579",
+      "onPrimary": "#ffffffff",
+      "onSurface": "#ff1c1c0f"
+    }
+  },
+  "ffbbc9cc": {
+    "dark": {
+      "CanvasBrush": "#ff131314",
+      "RailBrush": "#ff1f2020",
+      "CardBrush": "#ff1b1c1c",
+      "CardStroke": "#ff353535",
+      "MutedBrush": "#ffc3c7c8",
+      "PrimaryBrush": "#ffd7e5e8",
+      "SelectionBrush": "#ff434849",
+      "onPrimary": "#ff263335",
+      "onSurface": "#ffe4e2e2"
+    },
+    "light": {
+      "CanvasBrush": "#fffbf9f8",
+      "RailBrush": "#fff0eded",
+      "CardBrush": "#fff5f3f3",
+      "CardStroke": "#ffe4e2e2",
+      "MutedBrush": "#ff424849",
+      "PrimaryBrush": "#ff536163",
+      "SelectionBrush": "#ffdce0e1",
+      "onPrimary": "#ffffffff",
+      "onSurface": "#ff1b1c1c"
+    }
+  },
+  "ffabd397": {
+    "dark": {
+      "CanvasBrush": "#ff121410",
+      "RailBrush": "#ff1e201c",
+      "CardBrush": "#ff1a1c18",
+      "CardStroke": "#ff333531",
+      "MutedBrush": "#ffc3c8bb",
+      "PrimaryBrush": "#ffc6f0b1",
+      "SelectionBrush": "#ff3c4b35",
+      "onPrimary": "#ff17380c",
+      "onSurface": "#ffe2e3dc"
+    },
+    "light": {
+      "CanvasBrush": "#fff9faf2",
+      "RailBrush": "#ffeeeee7",
+      "CardBrush": "#fff4f4ed",
+      "CardStroke": "#ffe2e3dc",
+      "MutedBrush": "#ff43483e",
+      "PrimaryBrush": "#ff446736",
+      "SelectionBrush": "#ffd7e8ca",
+      "onPrimary": "#ffffffff",
+      "onSurface": "#ff1a1c18"
+    }
+  },
+  "ffd8c0c3": {
+    "dark": {
+      "CanvasBrush": "#ff151313",
+      "RailBrush": "#ff211f1f",
+      "CardBrush": "#ff1d1b1b",
+      "CardStroke": "#ff373434",
+      "MutedBrush": "#ffd1c3c4",
+      "PrimaryBrush": "#fff5dcdf",
+      "SelectionBrush": "#ff504748",
+      "onPrimary": "#ff3c2c2f",
+      "onSurface": "#ffe7e1e1"
+    },
+    "light": {
+      "CanvasBrush": "#fffef8f7",
+      "RailBrush": "#fff3ecec",
+      "CardBrush": "#fff9f2f2",
+      "CardStroke": "#ffe7e1e1",
+      "MutedBrush": "#ff4e4446",
+      "PrimaryBrush": "#ff6c5a5c",
+      "SelectionBrush": "#ffeddfe0",
+      "onPrimary": "#ffffffff",
+      "onSurface": "#ff1d1b1b"
+    }
+  },
+  "ff665390": {
+    "dark": {
+      "CanvasBrush": "#ff141317",
+      "RailBrush": "#ff211f23",
+      "CardBrush": "#ff1d1b1f",
+      "CardStroke": "#ff363438",
+      "MutedBrush": "#ffcbc4d0",
+      "PrimaryBrush": "#ffd1bcff",
+      "SelectionBrush": "#ff4b435c",
+      "onPrimary": "#ff38255f",
+      "onSurface": "#ffe6e1e7"
+    },
+    "light": {
+      "CanvasBrush": "#fffef7fe",
+      "RailBrush": "#fff2ecf2",
+      "CardBrush": "#fff8f2f8",
+      "CardStroke": "#ffe6e1e7",
+      "MutedBrush": "#ff49454f",
+      "PrimaryBrush": "#ff4e3b76",
+      "SelectionBrush": "#ffe9ddfd",
+      "onPrimary": "#ffffffff",
+      "onSurface": "#ff1d1b1f"
+    }
+  }
+}
