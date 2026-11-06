@@ -2,6 +2,8 @@
 
 A simple, efficient native proxy client for Windows and Android, based on FLClash 0.8.94.
 
+**English** · [简体中文](README_zh_CN.md)
+
 - Windows: C# / .NET 10 / WinUI 3, using named pipes to communicate with a separate Go Core.
 - Android: Kotlin / Jetpack Compose / Material 3, using Binder/AIDL to communicate with a separate VPN service and JNI to call the Go Core.
 
