@@ -19,7 +19,7 @@ Read `.agents/project.md`, `.agents/commands.md` and `.agents/rules.md` before c
 
 ## Releases
 
-- Version metadata lives in `version.properties`. Preserve published `0.8.96` and existing tags/artifacts; migration previews are not a replacement stable release.
+- The current release is `0.8.97`; version metadata lives in `version.properties`. Preserve published `0.8.96`, `0.8.96-native-preview.1` and all existing tags/artifacts.
 - Labels/tags use two final digits: `0.8.99 → 0.9.01 → ... → 0.9.99 → 0.10.01`. The `semver` property uses valid numeric components (`0.9.1`); Android `code` increases for every installable revision.
 - Every release documents **Features**, **Bug Fixes**, validation and remaining limitations. Never claim memory/performance reductions without comparable measurements.
 - Do not push tags or publish artifacts unless requested. Never move published tags.

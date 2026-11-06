@@ -9,7 +9,7 @@ Install .NET 10, Visual Studio's Windows application development tools, Windows 
 ```powershell
 dotnet run --project windows-native/FClash.Tests/FClash.Tests.csproj -c Release
 dotnet build windows-native/FClash.WinUI/FClash.WinUI.csproj -c Release -p:Platform=x64
-powershell -NoProfile -File scripts/build_windows_native.ps1 -Architecture x64 -Label 0.8.96-winui-preview -Targets zip
+powershell -NoProfile -File scripts/build_windows_native.ps1 -Architecture x64 -Label 0.8.97 -Targets zip
 ```
 
 For an installer use `-Targets 'exe,zip' -InnoCompiler C:/path/to/ISCC.exe`. ARM64 uses `-Architecture arm64`. Version metadata is read from `version.properties`; no Flutter/Dart SDK is needed. Artifacts go under `dist/windows-native/`; existing published 0.8.96 artifacts/tags are preserved. The installer has its own app identifier and destination, so it does not uninstall or overwrite the legacy Flutter installation.
@@ -17,7 +17,7 @@ For an installer use `-Targets 'exe,zip' -InnoCompiler C:/path/to/ISCC.exe`. ARM
 Only launch isolated safe mode for host verification:
 
 ```powershell
-build/native-windows/0.8.96-winui-preview/win-x64/FClash.exe --safe-mode --data-dir C:/absolute/workspace/build/native-safe-data
+build/native-windows/0.8.97/win-x64/FClash.exe --safe-mode --data-dir C:/absolute/workspace/build/native-safe-data
 ```
 
 Safe mode does not start/discover/attach Core, modify proxy/DNS/TUN, register auto-start, elevate or access helper services. Configuration editing still operates inside the isolated data directory. Do not launch normal mode or run the installer on the developer's host as an automated smoke test. Record test PIDs and stop only those processes.

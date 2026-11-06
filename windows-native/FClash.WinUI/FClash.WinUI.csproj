@@ -16,8 +16,8 @@
     <SelfContained>true</SelfContained>
     <PublishTrimmed>false</PublishTrimmed>
     <ApplicationIcon>../../resources/branding/app.ico</ApplicationIcon>
-    <Version>0.8.96</Version>
-    <InformationalVersion>0.8.96-winui-preview</InformationalVersion>
+    <Version>0.8.97</Version>
+    <InformationalVersion>0.8.97</InformationalVersion>
     <NoWarn>$(NoWarn);NU1900</NoWarn>
   </PropertyGroup>
   <ItemGroup>

@@ -3,7 +3,7 @@ Initialize `core/Clash.Meta` first.
 ```powershell
 dotnet run --project windows-native/FClash.Tests -c Release
 dotnet build windows-native/FClash.WinUI -c Release -p:Platform=x64
-./scripts/build_windows_native.ps1 -Architecture x64 -Label 0.8.96-native-preview -Targets 'exe,zip'
+./scripts/build_windows_native.ps1 -Architecture x64 -Label 0.8.97 -Targets 'exe,zip'
 python scripts/build_android.py
 python scripts/build_android.py --debug --safe-mode --abis arm64-v8a
 android/gradlew.bat -p android :domain:test

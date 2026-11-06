@@ -1,3 +1,19 @@
+## 0.8.97
+
+### Features
+
+- Windows 使用 C# / WinUI 3，Android 使用 Kotlin / Compose，仅保留这两个平台，移除 Flutter/Dart 及相关插件和构建流程。
+- 沿用 Material 风格、仪表盘、代理/配置卡片和工具设置层级，保留拖动排序、代理列表/标签页、下拉测速及持久化国旗。
+- 原生实现 Android 配置、脚本、备份恢复和旧数据只读迁移；Windows Core 随 GUI 会话退出。
+
+### Bug Fixes
+
+- 修复 Compose 状态变更后界面不刷新的问题，保持 DNS/规则 GUI 与 YAML 排序及标量类型一致。
+- 修复 VPN 选项应用与启动失败状态、旧备份 config.json 读取、Android API/权限兼容及 WinUI XAML/PRI/安装器资源问题。
+- 同步两端及构建流程版本为 0.8.97，Android versionCode 递增并保留发布签名。
+
+验证与已知限制见 [0.8.97 发布说明](releases/0.8.97.md)；真机 VPN/升级及可比内存测试仍需补充。
+
 ## 0.8.96
 
 ### Features

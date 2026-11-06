@@ -13,7 +13,7 @@
 
 ```powershell
 dotnet run --project windows-native/FClash.Tests -c Release
-./scripts/build_windows_native.ps1 -Architecture x64 -Label 0.8.96-native-preview -Targets zip
+./scripts/build_windows_native.ps1 -Architecture x64 -Label 0.8.97 -Targets zip
 python scripts/build_android.py
 ```
 

@@ -1,6 +1,6 @@
 # FClash native Windows / Android migration
 
-Source preview tag: `0.8.96-native-preview.1`. See [versioned release notes](0.8.96-native-preview.1.md).
+Release: [0.8.97](0.8.97.md). The earlier source preview tag `0.8.96-native-preview.1` is retained.
 
 ## Features
 
@@ -24,4 +24,4 @@ Source preview tag: `0.8.96-native-preview.1`. See [versioned release notes](0.8
 
 ## Validation
 
-Native validation results and dedicated-device limitations are recorded in `android/validation.md` and `windows-native/validation.md`. Published release 0.8.96 and existing artifacts/tags are preserved. This source preview does not replace the stable release. No measured production memory reduction is claimed.
+Native validation results and dedicated-device limitations are recorded in `android/validation.md` and `windows-native/validation.md`. Published release 0.8.96 and existing artifacts/tags are preserved. No measured production memory reduction is claimed.

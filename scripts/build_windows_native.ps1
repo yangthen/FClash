@@ -1,6 +1,6 @@
 param(
     [ValidateSet('x64', 'arm64')][string]$Architecture = 'x64',
-    [ValidatePattern('^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$')][string]$Label = '0.8.96-winui-preview',
+    [ValidatePattern('^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$')][string]$Label = '0.8.97',
     [string]$Targets = 'zip',
     [string]$InnoCompiler = $env:INNO_SETUP_COMPILER
 )

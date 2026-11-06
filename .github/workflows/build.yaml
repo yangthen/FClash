@@ -16,7 +16,7 @@ jobs:
       - run: dotnet run --project windows-native/FClash.Tests -c Release
       - shell: pwsh
         run: |
-          $label = (ConvertFrom-StringData (Get-Content version.properties -Raw)).label + '-native-preview'
+          $label = (ConvertFrom-StringData (Get-Content version.properties -Raw)).label
           ./scripts/build_windows_native.ps1 -Architecture x64 -Label $label -Targets 'exe,zip'
       - uses: actions/upload-artifact@v4
         with: {name: FClash-windows-native, path: dist/windows-native/}
